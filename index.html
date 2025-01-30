@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Live Chat 集計システム</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Live Chat 集計システム</h1>
+
+        <!-- リクエスト設定 -->
+        <div class="settings-group">
+            <h2>リクエスト設定</h2>
+            <div class="input-group">
+                <label for="apiKey">APIキー</label>
+                <div class="input-btn-container">
+                    <input type="password" id="apiKey" class="input-long" placeholder="APIキーを入力してください" value="">
+                    <button id="toggleApiKeyBtn" class="toggle-btn">表示</button>
+                </div>
+            </div>            
+            <div class="input-group">
+                <label for="videoId">動画ID</label>
+                <input type="text" id="videoId" class="input-medium" placeholder="動画IDを入力してください" value="">
+            </div>
+            <div class="input-group">
+                <label for="pollingInterval">リトライ(秒数)</label>
+                <input type="number" id="pollingInterval" class="input-short" value="30" min="1" max="999" step="1">
+            </div>
+            <div class="input-group">
+                <label for="exchangeRate">為替レート</label>
+                <div class="input-btn-container">
+                    <input type="text" id="exchangeRateInput" class="input-long" value= "" disabled> <!-- disabled 属性で無効化 -->
+                    <button id="openExchangeRateModal" class="toggle-btn">設定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 集計項目設定 -->
+        <div class="settings-group">
+            <h2>集計項目設定</h2>
+        
+            <!-- 基本項目 -->
+            <div class="input-group">
+                <label for="likeWeight">高評価</label>
+                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="likeWeight" class="input-short" value="0" min="-100.0" max="100.0" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="superChatWeight">スーパーチャット</label>
+                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="superChatWeight" class="input-short" value="0" min="-100.0" max="100.0" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="superStickerWeight">スーパーステッカー</label>
+                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="superStickerWeight" class="input-short" value="0" min="-100.0" max="100.0" step="0.1">
+            </div>
+            <div class="input-group">
+                <label for="memberWeight">新規メンバー</label>
+                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="memberWeight" class="input-short" value="0" min="-999" max="999" step="1">
+            </div>
+
+            <!-- 特定ワード設定 -->
+            <div class="input-group">
+                <label for="word1">キーワード1</label>
+                <input type="text" id="word1" class="input-medium" value="" placeholder="特定ワード1">
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="weight1" class="input-short" value="0" min="-100" max="100" step="1">
+            </div>
+            <div class="input-group">
+                <label for="word2">キーワード2</label>
+                <input type="text" id="word2" class="input-medium" value="" placeholder="特定ワード2">
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="weight2" class="input-short" value="0" min="-100" max="100" step="1">
+            </div>
+            <div class="input-group">
+                <label for="word3">キーワード3</label>
+                <input type="text" id="word3" class="input-medium" value="" placeholder="特定ワード3">
+                <label class="multiply-symbol">✖️</label>
+                <input type="number" id="weight3" class="input-short" value="0" min="-100" max="100" step="1">
+            </div>
+        </div>
+        
+        <!-- ボタン -->
+        <div class="button-group">
+            <button id="startBtn" class="btn">開始</button>
+            <button id="stopBtn" class="btn" disabled>停止</button>
+        </div>
+
+        <hr />
+
+        <!-- ステータス表示 -->
+        <div id="status" class="status"></div>
+
+        <!-- 最新のコメント取得時間 -->
+        <div class="line-control">
+            <h2>コメント取得時刻</h2>
+            <div id="lastFetchTime" class="fetch-time">未取得</div>
+        </div>
+
+        <!-- 合計ポイント表示 -->
+        <div class="line-control">
+            <h2>ポイント換算の集計値</h2>
+            <div id="totalPointsDisplay" class="fetch-time">0</div>
+        </div>
+
+        <hr />
+
+        <!-- 集計結果 -->
+        <div id="statsDisplay" class="stats-container">
+            <h2>取得結果</h2>
+            <div class="stat-item">
+                <span class="stat-label">高評価:</span>
+                <span class="stat-value" id="likeCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">スーパーチャット:</span>
+                <span class="stat-value" id="superChatAmount">¥0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">スーパーステッカー:</span>
+                <span class="stat-value" id="superStickerAmount">¥0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">新規メンバー:</span>
+                <span class="stat-value" id="newMembers">0</span>
+            </div>
+            <!-- 特定ワードの出現回数 -->
+            <div id="wordCountsContainer">
+                <!-- 特定ワードが動的に追加されます -->
+            </div>
+        </div>
+
+        <!-- ポイント換算 -->
+        <div class="points-container">
+            <h2>ポイント換算</h2>
+            <!--            
+             <div class="points-item">
+                <span class="points-label">合計値:</span>
+                <span class="points-value" id="totalPoints">0</span>
+            </div> 
+            -->
+            <div class="points-item">
+                <span class="points-label">高評価:</span>
+                <span class="points-value" id="likePoints">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">スーパーチャット:</span>
+                <span class="points-value" id="superChatPoints">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">スーパーステッカー:</span>
+                <span class="points-value" id="superStickerPoints">0</span>
+            </div>
+            <div class="points-item">
+                <span class="points-label">新規メンバー:</span>
+                <span class="points-value" id="memberPoints">0</span>
+            </div>
+            <!-- 特定ワードポイント -->
+            <div id="wordPointsContainer">
+                <!-- 特定ワードが動的に追加されます -->
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- ライブチャット表示 -->
+        <div class="line-control">
+            <h2>ライブチャット</h2>
+            <button id="copyChatBtn" class="copy-btn" onclick="copyToClipboard('liveChat')">Copy</button>
+        </div>
+        <div class="chat-container">
+            <pre id="liveChat" class="chat"></pre>
+        </div>
+
+        <!-- 動画情報表示 -->
+        <div class="line-control">
+            <h2>動画情報</h2>
+            <button id="copyDetailsBtn" class="copy-btn" onclick="copyToClipboard('videoDetails')">Copy</button>
+        </div>
+        <div class="details-container">
+            <pre id="videoDetails" class="details"></pre>
+        </div>
+
+    </div>
+
+    <!-- モーダルウィンドウ -->
+    <div id="exchangeRateModal" class="exchangeRates-modal">
+        <div class="exchangeRates-modal-content">
+            <span class="exchangeRates-close" id="closeModal">&times;</span>
+            <h2>為替レート設定</h2>
+            <div class="exchangeRates-scrollable">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>通貨</th>
+                            <th>レート</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exchangeRateTable">
+                        <!-- 動的にリストを生成 -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- ボタンを並べるためのコンテナ -->
+            <div class="exchangeRates-buttons">          
+                <button id="saveExchangeRates" class="exchangeRates-btn">保存</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

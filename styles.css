@@ -1,0 +1,599 @@
+/* コンテナ */
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px 40px;
+    background-color: #F8F9FA; /* 落ち着いたグレー */
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* 控えめな影 */
+}
+
+/* タイトル */
+h1 {
+    text-align: left;
+    margin: 5px 0 10px 5px;
+    font-size: 18px;
+    color: #495057; /* ネイビーグレー */
+    font-family: 'Poppins', 'Arial', sans-serif;
+}
+
+/* 全体のスタイル */
+body {
+    font-family: 'Poppins', 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #F8F9FA; /* グレー系の背景 */
+    color: #343A40; /* よりクールな印象のダークグレー */
+    line-height: 1.6;
+}
+
+/* 10文字分の幅 */
+.input-short {
+    width: 10ch;
+}
+
+/* 30文字分の幅 */
+.input-medium {
+    width: 30ch;
+}
+
+/* 50文字分の幅 */
+.input-long {
+    width: 50ch;
+}
+
+/* X */
+.multiply-symbol {
+    font-size: 20px;
+    font-weight: bold;
+    color: #495057;
+    text-align: center; /* 中央揃え */
+    display: inline-block;
+    min-width: 20px; /* 幅を固定してレイアウト崩れ防止 */
+}
+
+/* グループ化されたセクション */
+.settings-group {
+    background-color: #E9ECEF; /* 明るいグレー */
+    padding: 12px 20px;
+    border: 1px solid #ADB5BD; /* スモーキーグレー */
+    border-radius: 10px; /* 角を少し丸める */
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2); /* 控えめな影 */
+}
+
+/* グループの見出し */
+.settings-group h2 {
+    font-size: 16px;
+    color: #495057; /* 落ち着いたダークグレー */
+    font-family: 'Poppins', 'Arial', sans-serif;
+    text-align: left;
+}
+
+/* 入力グループ */
+.input-group {
+    display: grid;
+    font-size: 14px;
+    grid-template-columns: 150px 1fr 50px 100px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+    background-color: #DEE2E6; /* さらに明るいグレー */
+    border-radius: 6px;
+    padding: 8px;
+}
+
+/* ラベル */
+.input-group label {
+    font-weight: bold;
+    text-align: right;
+    color: #495057; /* ダークグレー */
+    font-family: 'Poppins', 'Arial', sans-serif;
+}
+
+/* 入力＋ボタンのエリアを調整 */
+.input-btn-container {
+    display: flex;
+    align-items: center; /* 高さを揃える */
+    gap: 8px; /* 隙間を調整 */
+    width: 100%; /* 親要素の幅に合わせる */
+}
+
+/* 入力欄の幅を調整 */
+.input-btn-container input {
+    flex: 1; /* 残りのスペースをすべて使う */
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* テキスト・数値入力 */
+.input-group input[type="text"],
+.input-group input[type="password"],
+.input-group input[type="number"] {
+    padding: 8px;
+    font-size: 16px; /* 少し大きくして見やすく */
+    font-weight: bold; /* 太字で強調 */
+    font-family: 'Poppins', 'Arial', sans-serif;
+    border: 1px solid #adb5bd; /* クールなグレー */
+    border-radius: 6px; /* 丸みを少し抑える */
+    background-color: #ffffff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    color: #222222; /* 文字色を少し濃く */
+}
+
+/* フォーカス時のスタイル（視認性アップ） */
+.input-group input[type="text"]:focus,
+.input-group input[type="number"]:focus {
+    border-color: #007bff; /* 強調カラー */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+/* 数値入力は右寄せ */
+.input-group input[type="number"] {
+    text-align: right;
+}
+
+/* 無効化された入力 */
+.input-group input[disabled] {
+    background-color: #f1f3f5; /* 柔らかいグレー */
+    color: #6c757d;
+}
+
+/* ボタン全体 */
+.button-group {
+    display: flex;
+    justify-content: center; /* 中央寄せ */
+    align-items: center;
+    gap: 40px; /* ボタン同士の間隔を広げる */
+    width: 100%; /* 親要素の幅いっぱいに広げる */
+    margin-bottom: 20px;
+}
+
+/* 共通ボタンデザイン */
+.btn,
+.copy-btn {
+    padding: 8px 60px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.toggle-btn {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* ホバー時 */
+.btn:hover,
+.toggle-btn:hover,
+.copy-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05); /* 少し大きくする */
+}
+
+/* 無効化されたボタン */
+.btn:disabled,
+.toggle-btn:disabled,
+.copy-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* ラインコントロール（タイトル右端にCopyボタン配置） */
+.line-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.line-control h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #495057;
+}
+
+/* 最新のコメント取得時間 */
+.fetch-time {
+    font-size: 24px;
+    font-weight: bold;
+    color: #495057;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: center;
+    min-width: 300px;
+}
+
+/* 合計ポイントの表示 */
+#totalPointsDisplay {
+    font-size: 24px;
+    font-weight: bold;
+    color: #495057;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: center;
+    min-width: 300px;
+}
+
+/* 集計結果 */
+.stats-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #E3F2FD; /* 薄い青 */
+    padding: 15px;
+    border: 1px solid #BBDEFB; /* さらに淡いブルー */
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(100, 149, 237, 0.2); /* ふんわりした影 */
+}
+
+/* 見出し */
+.stats-container h2 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #1565C0; /* 落ち着いたブルー */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 各統計項目 */
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #BBDEFB; /* 薄いボーダー */
+}
+
+/* 最後の項目はボーダーをなくす */
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+/* ラベル（左側） */
+.stat-label {
+    font-weight: bold;
+    color: #1565C0; /* ダークブルー */
+}
+
+/* 値（右側） */
+.stat-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #0D47A1; /* 深いブルーで強調 */
+}
+
+/* ポイント換算セクション */
+.points-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #FDE8EF; /* 優しいピンク */
+    padding: 15px;
+    border: 1px solid #F5C6CB; /* 淡いピンクのボーダー */
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(242, 132, 159, 0.2); /* ほんのりピンクの影 */
+}
+
+/* セクションタイトル */
+.points-container h2 {
+    font-size: 18px;
+    color: #C2185B; /* 落ち着いたピンク */
+    margin-bottom: 10px;
+}
+
+/* 各ポイント換算項目 */
+.points-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #F5C6CB; /* 薄いピンクのボーダー */
+}
+
+/* 最後の項目のボーダーを削除 */
+.points-item:last-child {
+    border-bottom: none;
+}
+
+/* ラベル（左側） */
+.points-label {
+    font-weight: bold;
+    color: #C2185B; /* ダークピンク */
+}
+
+/* 値（右側） */
+.points-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #E91E63; /* 鮮やかだけど落ち着いたピンク */
+}
+
+/* ライブチャット表示 */
+.chat-container {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.chat {
+    font-family: monospace;
+    white-space: pre-wrap;
+    height: 300px;
+    overflow-y: auto;
+}
+
+/* ライブチャット内の名前、スーパーチャット、メンバー加入などのスタイル */
+.chat-message {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+.chat-author {
+    font-weight: bold; /* 名前を太字に */
+    color: #212529;
+}
+
+.chat-text {
+    color: #495057;
+}
+
+.chat-superchat {
+    color: #dc3545; /* 赤色 */
+    font-weight: bold; /* 太字 */
+}
+
+.chat-member {
+    color: #28a745; /* 緑色 */
+    font-weight: bold; /* 太字 */
+}
+
+.chat-supersticker {
+    color: #dc3545; /* 赤色 */
+    font-weight: bold; /* 太字 */
+}
+
+.chat-highlight {
+    color: #007bff; /* 青色 */
+    font-weight: bold; /* 太字 */
+}
+
+/* 動画情報 */
+.details-container {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.details {
+    font-family: monospace;
+    white-space: pre-wrap;
+    height: 100px;
+    overflow-y: auto;
+}
+
+/* ステータス表示 */
+.status {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #28a745;
+    font-weight: bold;
+    display: inline-block;
+    padding: 10px 20px;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    position: relative;
+    transition: all 0.5s ease-in-out;
+}
+
+/* 実行中のアニメーション */
+@keyframes slowBlink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@keyframes glow {
+    0% { box-shadow: 0px 0px 5px rgba(40, 167, 69, 0.5); }
+    50% { box-shadow: 0px 0px 15px rgba(40, 167, 69, 0.8); }
+    100% { box-shadow: 0px 0px 5px rgba(40, 167, 69, 0.5); }
+}
+
+.executing {
+    animation: slowBlink 2s infinite ease-in-out, glow 2s infinite ease-in-out;
+    border: 2px solid #28a745;
+    border-image: linear-gradient(45deg, #28a745, #34d058, #28a745) 1;
+}
+
+/* 通知のスタイル */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #28a745; /* 成功時の緑色 */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeInOut 3s forwards; /* 表示と消えるアニメーション */
+}
+
+.notification.error {
+    background-color: #dc3545; /* 失敗時の赤色 */
+}
+
+/* 通知のフェードイン・フェードアウトアニメーション */
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(20px); }
+}
+
+/* モーダル全体（初期状態は非表示） */
+.exchangeRates-modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    
+    /* 初期状態 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* モーダルコンテンツ（中央配置） */
+.exchangeRates-modal-content {
+    background: #F8F9FA;
+    padding: 20px;
+    width: 400px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* 初期状態 */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* モーダル表示時 */
+.exchangeRates-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.exchangeRates-modal.show .exchangeRates-modal-content {
+    opacity: 1;
+}
+
+/* モーダルのタイトル */
+.exchangeRates-modal-content h2 {
+    font-size: 18px;
+    color: #343A40; /* ダークグレー */
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* モーダルのスクロール可能なコンテンツ */
+.exchangeRates-scrollable {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #CED4DA; /* スモーキーグレー */
+    border-radius: 6px;
+    background-color: #E9ECEF;
+    padding: 10px;
+}
+
+/* 閉じるボタン */
+.exchangeRates-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #495057;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.exchangeRates-close:hover {
+    color: #DC3545; /* 赤くして強調 */
+}
+
+/* テーブル */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+thead {
+    background: #ADB5BD; /* スモーキーグレー */
+    color: #FFF;
+}
+
+th, td {
+    padding: 8px;
+    border-bottom: 1px solid #CED4DA;
+    text-align: center;
+}
+
+/* 交互に色を変える */
+tbody tr:nth-child(even) {
+    background: #F1F3F5;
+}
+
+tbody tr:hover {
+    background: #DEE2E6; /* ハイライト */
+    transition: background 0.2s;
+}
+
+/* ボタンを中央に配置するコンテナ */
+.exchangeRates-buttons {
+    display: flex;
+    justify-content: center; /* 中央揃え */
+    margin-top: 10px;
+}
+
+/* ボタンのスタイル */
+.exchangeRates-btn {
+    background: #007BFF;
+    color: white;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-align: center;
+    min-width: 150px; /* ボタンのサイズを一定に */
+}
+
+.exchangeRates-btn:hover {
+    background: #0056b3;
+}
+
+/* フェードインアニメーション */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
