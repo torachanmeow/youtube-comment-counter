@@ -92,7 +92,6 @@ async function loadExchangeRates() {
         }
 
         exchangeRates = exchangeRateData.exchangeRates;
-        console.log('為替レートがロードされました:', exchangeRates);
     } catch (error) {
         console.error('為替レートのロードに失敗しました:', error);
         exchangeRates = {}; // 空のオブジェクトにリセット
@@ -109,7 +108,6 @@ const wordInputs = [
 // 特定ワードを取得する関数
 function getSpecialWords() {
     const specialWords = wordInputs.map(input => input.value.trim()).filter(word => word !== '');
-    console.log("特定ワードリスト:", specialWords); // デバッグログ
     return specialWords;
 }
 
@@ -249,7 +247,6 @@ function getSpecialWordsWithWeights() {
         }
     });
 
-    console.log("特定ワードと重み:", specialWords);
     return specialWords;
 }
 
@@ -353,7 +350,6 @@ async function fetchVideoDetails(apiKey, videoId) {
         liveChatData.stats.likes = videoDetails.likeCount || 0; // 高評価数を更新
         updateStatsDisplay(liveChatData.stats); // 統計データを表示に反映
         displayVideoDetails(videoDetails); // 整形して動画情報を表示
-        console.log('高評価数更新:', videoDetails.likeCount); // デバッグ用ログ
     }
 }
 
@@ -462,10 +458,10 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
             if (isGiftedMembership(message)) {
                 const giftCount = getGiftedMembershipCount(message);
                 if (giftCount > 0) {
-                    pendingGiftCount += giftCount; // ギフトされた数を加算
                     messageSpan.classList.add('chat-member'); // **緑色**
                     messageSpan.textContent += ` => ${giftCount}名にギフトメンバーシップが贈られました！`;
-                    console.log(`${authorName} が ${giftCount} 名にギフトメンバーシップを贈りました`);
+
+                    liveChatData.stats.members += giftCount;  // ギフト数をそのままメンバー数に加算
                 }
             }
 
@@ -473,24 +469,12 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
             if (isReceivedGiftMembership(message)) {
                 messageSpan.classList.add('chat-member'); // **緑色**
                 messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
-                
-                liveChatData.stats.members++;  // メンバー数カウント
-                if (pendingGiftCount > 0) {
-                    pendingGiftCount--;  // ギフトカウントダウン
-                } else {
-                    console.warn(`ギフトのカウントが不整合: ${authorName} がギフトを受け取ったが pendingGiftCount = 0`);
-                }
             }
 
             // **通常のメンバー加入**
             if (isNewMember(message)) {
                 messageSpan.classList.add('chat-member'); // **緑色**
-                if (pendingGiftCount > 0) {
-                    messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
-                    pendingGiftCount--;  // ギフトカウントダウン
-                } else {
-                    messageSpan.textContent += ` => 通常の新規メンバー加入！`;
-                }
+                messageSpan.textContent += ` => 通常の新規メンバー加入！`;
                 liveChatData.stats.members++; // メンバーカウント
             }
 
@@ -551,7 +535,6 @@ function limitChatLines() {
 // ユーザー履歴をリセット
 function resetWordHistory() {
     userWordHistory = {}; // 全ユーザーの履歴をリセット
-    console.log("🔄 ユーザー履歴がリセットされました");
 }
 
 // fetchedMessageIds の容量を抑える (メモリ使用量の削減)
@@ -719,7 +702,6 @@ function saveSettings() {
         weight3: document.getElementById('weight3').value.trim(),
     };
     localStorage.setItem('LiveChatSettings', JSON.stringify(settings));
-    console.log('設定が保存されました:', settings);
 }
 
 // 設定をロードする関数
@@ -739,7 +721,6 @@ function loadSettings() {
         document.getElementById('weight2').value = settings.weight2 || '0';
         document.getElementById('word3').value = settings.word3 || '';
         document.getElementById('weight3').value = settings.weight3 || '0';
-        console.log('設定がロードされました:', settings);
     }
 }
 
