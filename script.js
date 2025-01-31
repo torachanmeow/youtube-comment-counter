@@ -198,9 +198,12 @@ function updatePointsDisplay(stats) {
     wordPointsContainer.innerHTML = ''; // 初期化
     let totalWordPoints = 0;
 
-    Object.entries(stats.wordCounts).forEach(([word, count], index) => {
-        const wordWeight = parseFloat(document.getElementById(`weight${index + 1}`).value) || 0; // 重みを取得
-        const wordPoints = count * wordWeight;
+    // 特定ワードと重みを ペアで管理 するオブジェクトリストを取得
+    const specialWordsWithWeights = getSpecialWordsWithWeights();
+
+    specialWordsWithWeights.forEach(({ word, weight }) => {
+        const count = stats.wordCounts[word] || 0;
+        const wordPoints = count * weight;
         totalWordPoints += wordPoints;
 
         // 特定ワードポイントを表示
@@ -233,34 +236,58 @@ function updatePointsDisplay(stats) {
         [likePoints, superChatPoints, superStickerPoints, memberPoints, totalWordPoints].map(p => Number(p.toFixed(0))).reduce((sum, p) => sum + p, 0); // 合計を計算
 }
 
+// 特定ワードと重みを ペアで管理 するオブジェクトリスト
+function getSpecialWordsWithWeights() {
+    let specialWords = [];
+
+    wordInputs.forEach((input, index) => {
+        const word = input.value.trim();
+        const weight = parseFloat(document.getElementById(`weight${index + 1}`).value) || 0;
+
+        if (word) {
+            specialWords.push({ word, weight, index }); // index を追加して区別
+        }
+    });
+
+    console.log("特定ワードと重み:", specialWords);
+    return specialWords;
+}
+
 // 特定ワードをカウントしつつ、ハイライトを適用
-function countWords(authorId, message, wordCounts) {
+function countWords(authorId, message, specialWordsWithWeights) {
     if (!userWordHistory[authorId]) {
         userWordHistory[authorId] = { words: new Set(), lastActive: Date.now() };
     }
 
     userWordHistory[authorId].lastActive = Date.now();
 
-    let matchedWords = new Set(); // **一時的なカウントリスト**
+    let matchedWords = []; //
 
     // **メッセージ内のワードを検出**
-    Object.keys(wordCounts).forEach(word => {
+    specialWordsWithWeights.forEach(({ word, index }) => {
         const regex = new RegExp(`(${word})`, 'gi');
-        if (message.match(regex)) {
-            matchedWords.add(word); // **見つかったワードをセットに追加**
+        const matches = message.match(regex); // **マッチしたすべてのワードを取得**
+        if (matches) {
+            matchedWords.push(...matches.map(() => ({ word }))); // **マッチ回数分追加**
         }
     });
 
-    // **ワードを1回だけカウント**
-    matchedWords.forEach(word => {
+    // matchedWords からユニークな単語を取得
+    const uniqueWords = new Set(matchedWords.map(({ word }) => word));
+
+    // **ワードをそれぞれカウント**
+    uniqueWords.forEach(word => {
+        if (liveChatData.stats.wordCounts[word] === undefined) {
+            liveChatData.stats.wordCounts[word] = 0;
+        }
         if (!userWordHistory[authorId].words.has(word)) {
-            wordCounts[word]++;
-            userWordHistory[authorId].words.add(word);
+            liveChatData.stats.wordCounts[word]++; // **カウントを加算**
+            userWordHistory[authorId].words.add(word); // **ユーザー履歴に追加**
         }
     });
 
-    // **ハイライト適用（カウント後に実施）**
-    Object.keys(wordCounts).forEach(word => {
+    // **ハイライト適用**
+    specialWordsWithWeights.forEach(({ word }) => {
         const regex = new RegExp(`(${word})`, 'gi');
         message = message.replace(regex, `<span class="chat-highlight">$1</span>`);
     });
@@ -396,8 +423,11 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
             const messageSpan = document.createElement('span');
             messageSpan.className = 'chat-text';
 
+            // 特定ワードと重みを ペアで管理 するオブジェクトリストを取得
+            const specialWordsWithWeights = getSpecialWordsWithWeights();
+
             // **特定ワードをカウントしつつ、ハイライトを適用**
-            message = countWords(authorId, message, liveChatData.stats.wordCounts);
+            message = countWords(authorId, message, specialWordsWithWeights);
             messageSpan.innerHTML = message; // ハイライト適用済みのメッセージ
 
             // **スーパーチャットの処理**
@@ -431,34 +461,37 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
             // **ギフトメンバーの送信**
             if (isGiftedMembership(message)) {
                 const giftCount = getGiftedMembershipCount(message);
-                pendingGiftCount += giftCount;
-                messageSpan.classList.add('chat-member'); // **緑色**
-                messageSpan.textContent += ` => ${giftCount}名にギフトメンバーシップが贈られました！`;
-                console.log(`${authorName} が ${giftCount} 名にギフトメンバーシップを贈りました`);
+                if (giftCount > 0) {
+                    pendingGiftCount += giftCount; // ギフトされた数を加算
+                    messageSpan.classList.add('chat-member'); // **緑色**
+                    messageSpan.textContent += ` => ${giftCount}名にギフトメンバーシップが贈られました！`;
+                    console.log(`${authorName} が ${giftCount} 名にギフトメンバーシップを贈りました`);
+                }
             }
 
             // **ギフトメンバーの受取**
             if (isReceivedGiftMembership(message)) {
+                messageSpan.classList.add('chat-member'); // **緑色**
+                messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
+                
+                liveChatData.stats.members++;  // メンバー数カウント
                 if (pendingGiftCount > 0) {
-                    messageSpan.classList.add('chat-member'); // **緑色**
-                    messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
-                    liveChatData.stats.members++;
-                    pendingGiftCount--;
+                    pendingGiftCount--;  // ギフトカウントダウン
+                } else {
+                    console.warn(`ギフトのカウントが不整合: ${authorName} がギフトを受け取ったが pendingGiftCount = 0`);
                 }
             }
 
             // **通常のメンバー加入**
             if (isNewMember(message)) {
+                messageSpan.classList.add('chat-member'); // **緑色**
                 if (pendingGiftCount > 0) {
-                    messageSpan.classList.add('chat-member'); // **緑色**
                     messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
-                    liveChatData.stats.members++;
-                    pendingGiftCount--;
+                    pendingGiftCount--;  // ギフトカウントダウン
                 } else {
-                    messageSpan.classList.add('chat-member'); // **緑色**
                     messageSpan.textContent += ` => 通常の新規メンバー加入！`;
-                    liveChatData.stats.members++;
                 }
+                liveChatData.stats.members++; // メンバーカウント
             }
 
             // **名前とメッセージを追加**
@@ -500,8 +533,11 @@ function isNewMember(message) {
 
 // ギフトメンバーの人数を取得（デフォルト1人）
 function getGiftedMembershipCount(message) {
-    const match = message.match(/gifted (\d+) memberships/);
-    return match ? parseInt(match[1], 10) : 1; // 数字がなければ1をデフォルト
+    const match = message.match(/gifted (\d+)/);
+    if (match && match[1]) {
+        return parseInt(match[1], 10); // 数値に変換
+    }
+    return 1; // デフォルトで1名
 }
 
 // チャットの行数を制限
