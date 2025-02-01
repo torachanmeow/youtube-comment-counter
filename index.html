@@ -11,84 +11,81 @@
     <div class="container">
         <h1>YouTube Live Chat 集計システム</h1>
 
-        <!-- リクエスト設定 -->
-        <div class="settings-group">
-            <h2>リクエスト設定</h2>
-            <div class="input-group">
-                <label for="apiKey">APIキー</label>
-                <div class="input-btn-container">
-                    <input type="password" id="apiKey" class="input-medium" placeholder="APIキーを入力してください" value="">
-                    <button id="toggleApiKeyBtn" class="toggle-btn">表示</button>
-                </div>
-            </div>            
-            <div class="input-group">
-                <label for="videoId">動画ID</label>
-                <input type="text" id="videoId" class="input-medium" placeholder="動画IDを入力してください" value="">
+        <!-- API設定 -->
+        <div class="settings-container">
+            <div class="settings-item">
+                <label class="settings-label" for="apiKey">APIキー</label>
+                <input class="settings-word" type="password" id="apiKey" placeholder="APIキーを入力してください" value="">
+                <span class="settings-symbol"></span>
+                <button class="settings-btn" id="toggleApiKeyBtn">表示</button>
             </div>
-            <div class="input-group">
-                <label for="pollingInterval">リトライ(秒数)</label>
-                <input type="number" id="pollingInterval" class="input-short" value="30" min="1" max="999" step="1">
-            </div>
-            <div class="input-group">
-                <label for="exchangeRate">為替レート</label>
-                <div class="input-btn-container">
-                    <input type="text" id="exchangeRateInput" class="input-long" value= "" disabled> <!-- disabled 属性で無効化 -->
-                    <button id="openExchangeRateModal" class="toggle-btn">設定</button>
-                </div>
+            <div class="settings-item">
+                <label class="settings-label" for="exchangeRate">為替レート</label>
+                <input class="settings-word" type="text" id="exchangeRateInput" value= "" disabled> <!-- disabled 属性で無効化 -->
+                <span class="settings-symbol"></span>
+                <button class="settings-btn" id="openExchangeRateModal" >設定</button>
             </div>
         </div>
 
         <!-- 集計項目設定 -->
-        <div class="settings-group">
-            <h2>集計項目設定</h2>
-        
-            <!-- 基本項目 -->
-            <div class="input-group">
-                <label for="likeWeight">高評価</label>
-                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="likeWeight" class="input-short" value="0" min="-100.0" max="100.0" step="0.1">
+        <div class="settings-container">
+            <div class="settings-item">
+                <label class="settings-label" for="likeWeight">高評価</label>
+                <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="likeWeight" value="0" min="-100.0" max="100.0" step="0.1">
+            </div>   
+            <div class="settings-item">
+                <label class="settings-label" for="superChatWeight">スーパーチャット</label>
+                <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="superChatWeight" value="0" min="-100.0" max="100.0" step="0.1">
+            </div>   
+            <div class="settings-item">
+                <label class="settings-label" for="superStickerWeight">スーパーステッカー</label>
+                <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="superStickerWeight" value="0" min="-100.0" max="100.0" step="0.1">
+            </div>   
+            <div class="settings-item">
+                <label class="settings-label" for="word1">新規メンバー</label>
+                <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="memberWeight" value="0" min="-999" max="999" step="1">
+            </div>    
+            <div class="settings-item">
+                <label class="settings-label" for="word2">キーワード1</label>
+                <input class="settings-word" type="text" id="word1" value="" placeholder="特定ワード1">
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="weight1" value="0" min="-100" max="100" step="1">
             </div>
-            <div class="input-group">
-                <label for="superChatWeight">スーパーチャット</label>
-                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="superChatWeight" class="input-short" value="0" min="-100.0" max="100.0" step="0.1">
+            <div class="settings-item">
+                <label class="settings-label" for="word2">キーワード2</label>
+                <input class="settings-word" type="text" id="word2" value="" placeholder="特定ワード2">
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="weight2" value="0" min="-100" max="100" step="1">
             </div>
-            <div class="input-group">
-                <label for="superStickerWeight">スーパーステッカー</label>
-                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="superStickerWeight" class="input-short" value="0" min="-100.0" max="100.0" step="0.1">
-            </div>
-            <div class="input-group">
-                <label for="memberWeight">新規メンバー</label>
-                <input type="text" class="input-short"  value="-" disabled> <!-- disabled 属性で無効化 -->
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="memberWeight" class="input-short" value="0" min="-999" max="999" step="1">
-            </div>
-
-            <!-- 特定ワード設定 -->
-            <div class="input-group">
-                <label for="word1">キーワード1</label>
-                <input type="text" id="word1" class="input-medium" value="" placeholder="特定ワード1">
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="weight1" class="input-short" value="0" min="-100" max="100" step="1">
-            </div>
-            <div class="input-group">
-                <label for="word2">キーワード2</label>
-                <input type="text" id="word2" class="input-medium" value="" placeholder="特定ワード2">
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="weight2" class="input-short" value="0" min="-100" max="100" step="1">
-            </div>
-            <div class="input-group">
-                <label for="word3">キーワード3</label>
-                <input type="text" id="word3" class="input-medium" value="" placeholder="特定ワード3">
-                <label class="multiply-symbol">✖️</label>
-                <input type="number" id="weight3" class="input-short" value="0" min="-100" max="100" step="1">
+            <div class="settings-item">
+                <label class="settings-label" for="word3">キーワード3</label>
+                <input class="settings-word" type="text" id="word3" value="" placeholder="特定ワード3">
+                <span class="settings-symbol">✖️</span>
+                <input class="settings-weight" type="number" id="weight3" value="0" min="-100" max="100" step="1">
             </div>
         </div>
-        
+
+        <!-- リクエスト処理 -->
+        <div class="settings-half-container">          
+            <div class="settings-item">
+                <label class="settings-label" for="videoId">動画ID</label>
+                <input class="settings-word" type="text" id="videoId" placeholder="動画IDを入力してください" value="">
+            </div>
+            <div class="settings-item">
+                <label class="settings-label" for="pollingInterval">リトライ(秒)</label>
+                <span class="settings-symbol"></span>
+                <input class="settings-value" type="number" id="pollingInterval" value="30" min="1" max="999" step="1">
+            </div>
+        </div>
+
         <!-- ボタン -->
         <div class="button-group">
             <button id="startBtn" class="btn">開始</button>
@@ -97,19 +94,21 @@
 
         <hr />
 
+        <!-- ステータス表示 -->
+        <div id="status" class="status"></div>
+
         <!-- 最新取得 -->
         <div class="latest-info">
             最新取得：<span id="lastFetchTime">00:00:00</span>
         </div>
 
-        <!-- ステータス表示 -->
-        <div id="status" class="status"></div>
-
         <!-- 合計ポイント -->
-        <div class="line-control">
-            <h2>合計ポイント</h2>
+        <div class="totalPoints-container">
+            <div class="totalPoints-item">
+                <span class="totalPoints-label">合計</span>
+                <span id="totalPointsDisplay" class="fetch-time">0</span>
+            </div>
         </div>
-        <div id="totalPointsDisplay" class="fetch-time">0</div>
 
         <hr />
 
@@ -117,19 +116,19 @@
         <div id="statsDisplay" class="stats-container">
             <h2>取得結果</h2>
             <div class="stat-item">
-                <span class="stat-label">高評価:</span>
+                <span class="stat-label">高評価</span>
                 <span class="stat-value" id="likeCount">0</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">スーパーチャット:</span>
+                <span class="stat-label">スーパーチャット</span>
                 <span class="stat-value" id="superChatAmount">¥0</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">スーパーステッカー:</span>
+                <span class="stat-label">スーパーステッカー</span>
                 <span class="stat-value" id="superStickerAmount">¥0</span>
             </div>
             <div class="stat-item">
-                <span class="stat-label">新規メンバー:</span>
+                <span class="stat-label">新規メンバー</span>
                 <span class="stat-value" id="newMembers">0</span>
             </div>
             <!-- 特定ワードの出現回数 -->
@@ -141,26 +140,20 @@
         <!-- ポイント換算 -->
         <div class="points-container">
             <h2>ポイント換算</h2>
-            <!--            
-             <div class="points-item">
-                <span class="points-label">合計値:</span>
-                <span class="points-value" id="totalPoints">0</span>
-            </div> 
-            -->
             <div class="points-item">
-                <span class="points-label">高評価:</span>
+                <span class="points-label">高評価</span>
                 <span class="points-value" id="likePoints">0</span>
             </div>
             <div class="points-item">
-                <span class="points-label">スーパーチャット:</span>
+                <span class="points-label">スーパーチャット</span>
                 <span class="points-value" id="superChatPoints">0</span>
             </div>
             <div class="points-item">
-                <span class="points-label">スーパーステッカー:</span>
+                <span class="points-label">スーパーステッカー</span>
                 <span class="points-value" id="superStickerPoints">0</span>
             </div>
             <div class="points-item">
-                <span class="points-label">新規メンバー:</span>
+                <span class="points-label">新規メンバー</span>
                 <span class="points-value" id="memberPoints">0</span>
             </div>
             <!-- 特定ワードポイント -->

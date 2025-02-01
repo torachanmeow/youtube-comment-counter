@@ -1,6 +1,6 @@
 /* コンテナ */
 .container {
-    max-width: 800px;
+    max-width: 650px;
     margin: auto;
     padding: 20px 40px;
     background-color: #F8F9FA; /* 落ち着いたグレー */
@@ -27,134 +27,16 @@ body {
     line-height: 1.6;
 }
 
-/* 10文字分の幅 */
-.input-short {
-    width: 10ch;
-}
-
-/* 30文字分の幅 */
-.input-medium {
-    width: 30ch;
-}
-
-/* 50文字分の幅 */
-.input-long {
-    width: 50ch;
-}
-
-/* X */
-.multiply-symbol {
-    font-size: 20px;
-    font-weight: bold;
-    color: #495057;
-    text-align: center; /* 中央揃え */
-    display: inline-block;
-    min-width: 20px; /* 幅を固定してレイアウト崩れ防止 */
-}
-
-/* グループ化されたセクション */
-.settings-group {
-    background-color: #E9ECEF; /* 明るいグレー */
-    padding: 12px 20px;
-    border: 1px solid #ADB5BD; /* スモーキーグレー */
-    border-radius: 10px; /* 角を少し丸める */
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2); /* 控えめな影 */
-}
-
-/* グループの見出し */
-.settings-group h2 {
-    font-size: 16px;
-    color: #495057; /* 落ち着いたダークグレー */
-    font-family: 'Poppins', 'Arial', sans-serif;
-    text-align: left;
-}
-
-/* 入力グループ */
-.input-group {
-    display: grid;
-    font-size: 14px;
-    grid-template-columns: 150px 400px 30px 0px;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 5px;
-    background-color: #DEE2E6; /* さらに明るいグレー */
-    border-radius: 6px;
-    padding: 4px;
-}
-
-/* ラベル */
-.input-group label {
-    font-weight: bold;
-    text-align: right;
-    color: #495057; /* ダークグレー */
-    font-family: 'Poppins', 'Arial', sans-serif;
-}
-
-/* 入力＋ボタンのエリアを調整 */
-.input-btn-container {
-    display: flex;
-    align-items: center; /* 高さを揃える */
-    gap: 8px; /* 隙間を調整 */
-    width: 100%; /* 親要素の幅に合わせる */
-}
-
-/* 入力欄の幅を調整 */
-.input-btn-container input {
-    flex: 1; /* 残りのスペースをすべて使う */
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    background-color: #ffffff;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-/* テキスト・数値入力 */
-.input-group input[type="text"],
-.input-group input[type="password"],
-.input-group input[type="number"] {
-    padding: 8px;
-    font-size: 16px; /* 少し大きくして見やすく */
-    font-weight: bold; /* 太字で強調 */
-    font-family: 'Poppins', 'Arial', sans-serif;
-    border: 1px solid #adb5bd; /* クールなグレー */
-    border-radius: 6px; /* 丸みを少し抑える */
-    background-color: #ffffff;
-    transition: border-color 0.3s, box-shadow 0.3s;
-    color: #222222; /* 文字色を少し濃く */
-}
-
-/* フォーカス時のスタイル（視認性アップ） */
-.input-group input[type="text"]:focus,
-.input-group input[type="number"]:focus {
-    border-color: #007bff; /* 強調カラー */
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    outline: none;
-}
-
-/* 数値入力は右寄せ */
-.input-group input[type="number"] {
-    text-align: right;
-}
-
-/* 無効化された入力 */
-.input-group input[disabled] {
-    background-color: #f1f3f5; /* 柔らかいグレー */
-    color: #6c757d;
-}
-
-/* ボタン全体 */
+/* ボタンデザイン */
 .button-group {
     display: flex;
-    justify-content: center; /* 中央寄せ */
+    justify-content: left; /* 中央寄せ */
     align-items: center;
     gap: 40px; /* ボタン同士の間隔を広げる */
     width: 100%; /* 親要素の幅いっぱいに広げる */
     margin-bottom: 20px;
 }
 
-/* 共通ボタンデザイン */
 .btn,
 .copy-btn {
     padding: 8px 60px;
@@ -167,8 +49,8 @@ body {
     transition: background-color 0.3s;
 }
 
-.toggle-btn {
-    padding: 8px 12px;
+.settings-btn {
+    padding: 4px 30px 4px 30px;
     font-size: 14px;
     border: none;
     border-radius: 4px;
@@ -194,34 +76,96 @@ body {
     cursor: not-allowed;
 }
 
-/* ラインコントロール（タイトル右端にCopyボタン配置） */
-.line-control {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
-.line-control h2 {
-    margin: 0;
-    font-size: 18px;
-    color: #495057;
-}
-
-/* 合計ポイントの表示 */
-#totalPointsDisplay {
+/* 設定の表示 */
+.settings-container {
     display: flex;
     flex-direction: column;
-    font-size: 30px;
-    font-weight: bold;
-    color: #495057;
-    padding: 15px;
-    text-align: right;
-    padding: 10px;
+    padding: 4px 10px 4px 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
     border: 1px solid #dee2e6;
     border-radius: 4px;
     background-color: #f9f9f9;
+}
+
+.settings-half-container {
+    display: flex;
+    flex-direction: column; /* 縦並び */
+    padding: 4px 10px; /* 内側の余白 */
+    width: 80%;
+    box-sizing: border-box; /* パディングを含めた幅の計算 */
+    margin-bottom: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.settings-item {
+    display: flex;
+    font-size: 14px;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.settings-label {
+    flex: 0.25;
+    font-weight: bold;
+    color: #495057;
+}
+
+.settings-word {
+    flex: 0.65;
+    text-align: left;
+    width: 40ch;
+}
+
+.settings-symbol {
+    flex: 0.05;
+    font-weight: bold;
+    color: #495057;
+    text-align: center; /* 中央揃え */
+    display: inline-block;
+    min-width: 20px; /* 幅を固定してレイアウト崩れ防止 */
+}
+
+.settings-weight,
+.settings-retry {
+    flex: 0.05;
+    width: 10ch;
+}
+
+/* テキスト・数値入力 */
+.settings-item input[type="text"],
+.settings-item input[type="password"],
+.settings-item input[type="number"] {
+    padding: 4px;
+    font-size: 16px; /* 少し大きくして見やすく */
+    font-weight: bold; /* 太字で強調 */
+    font-family: 'Poppins', 'Arial', sans-serif;
+    border: 1px solid #adb5bd; /* クールなグレー */
+    border-radius: 6px; /* 丸みを少し抑える */
+    background-color: #ffffff;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    color: #222222; /* 文字色を少し濃く */
+}
+
+/* フォーカス時のスタイル（視認性アップ） */
+.settings-item input[type="text"]:focus,
+.settings-item input[type="number"]:focus {
+    border-color: #007bff; /* 強調カラー */
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+/* 数値入力は右寄せ */
+.settings-item input[type="number"] {
+    text-align: right;
+}
+
+/* 無効化された入力 */
+.settings-item input[disabled] {
+    background-color: #f1f3f5; /* 柔らかいグレー */
+    color: #6c757d;
 }
 
 /* 最新のコメント取得時間 */
@@ -236,11 +180,43 @@ body {
     align-items: center; /* 垂直方向の中央揃え */
 }
 
-/* カウンターのスタイル */
 #lastFetchTime {
     font-family: "Courier New", monospace; /* 等幅フォントで見やすく */
     font-size: 18px; /* 数字を見やすく */
     color: #d63384; /* 目立つ色 */
+}
+
+/* 合計ポイント */
+.totalPoints-container {
+    display: flex;
+    flex-direction: column;
+    padding: 5px 15px 5px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.totalPoints-item {
+    display: flex;
+    font-size: 30px;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.totalPoints-label {
+    font-weight: bold;
+    color: #495057;
+}
+
+#totalPointsDisplay {
+    display: flex;
+    flex-direction: column;
+    font-size: 30px;
+    font-weight: bold;
+    color: #495057;
+    letter-spacing: 10px; /* 文字間隔を調整 */
 }
 
 /* 集計結果 */
@@ -255,40 +231,36 @@ body {
     box-shadow: 0 2px 4px rgba(100, 149, 237, 0.2); /* ふんわりした影 */
 }
 
-/* 見出し */
 .stats-container h2 {
     font-size: 12px;
     color: #1565C0; /* 落ち着いたブルー */
     margin-bottom: 10px;
 }
 
-/* 各統計項目 */
 .stat-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #BBDEFB; /* 薄いボーダー */
 }
 
-/* 最後の項目はボーダーをなくす */
 .stat-item:last-child {
     border-bottom: none;
 }
 
-/* ラベル（左側） */
 .stat-label {
     font-weight: bold;
     color: #1565C0; /* ダークブルー */
 }
 
-/* 値（右側） */
 .stat-value {
     font-size: 16px;
     font-weight: bold;
     color: #0D47A1; /* 深いブルーで強調 */
+    letter-spacing: 10px; /* 文字間隔を調整 */
 }
 
-/* ポイント換算セクション */
+/* ポイント換算 */
 .points-container {
     display: flex;
     flex-direction: column;
@@ -300,37 +272,48 @@ body {
     box-shadow: 0 2px 4px rgba(242, 132, 159, 0.2); /* ほんのりピンクの影 */
 }
 
-/* セクションタイトル */
 .points-container h2 {
     font-size: 12px;
     color: #C2185B; /* 落ち着いたピンク */
     margin-bottom: 10px;
 }
 
-/* 各ポイント換算項目 */
 .points-item {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #F5C6CB; /* 薄いピンクのボーダー */
 }
 
-/* 最後の項目のボーダーを削除 */
 .points-item:last-child {
     border-bottom: none;
 }
 
-/* ラベル（左側） */
 .points-label {
     font-weight: bold;
     color: #C2185B; /* ダークピンク */
 }
 
-/* 値（右側） */
 .points-value {
     font-size: 16px;
     font-weight: bold;
     color: #E91E63; /* 鮮やかだけど落ち着いたピンク */
+    letter-spacing: 10px; /* 文字間隔を調整 */
+}
+
+/* ラインコントロール（タイトル右端にCopyボタン配置） */
+.line-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.line-control h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #495057;
 }
 
 /* ライブチャット表示 */

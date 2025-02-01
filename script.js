@@ -207,7 +207,7 @@ function updateStatsDisplay(stats) {
 
         const wordLabel = document.createElement('span');
         wordLabel.className = 'stat-label'; // ラベルのスタイル
-        wordLabel.textContent = `${word}:`; // ワード名
+        wordLabel.textContent = `${word}`; // ワード名
 
         const wordValue = document.createElement('span');
         wordValue.className = 'stat-value'; // 値のスタイル
@@ -255,7 +255,7 @@ function updatePointsDisplay(stats) {
 
         const wordLabel = document.createElement('span');
         wordLabel.className = 'points-label';
-        wordLabel.textContent = `${word}:`;
+        wordLabel.textContent = `${word}`;
 
         const wordValue = document.createElement('span');
         wordValue.className = 'points-value';
@@ -297,13 +297,19 @@ function getSpecialWordsWithWeights() {
 
 // 特定ワードをカウントしつつ、ハイライトを適用
 function countWords(authorId, message, specialWordsWithWeights) {
+    if (message == null) return; // null / undefined の場合はスキップ
+
+    if (typeof message !== 'string') {
+        message = String(message); // 数値なら文字列に変換
+    }
+
     if (!userWordHistory[authorId]) {
         userWordHistory[authorId] = { words: new Set(), lastActive: Date.now() };
     }
 
     userWordHistory[authorId].lastActive = Date.now();
 
-    let matchedWords = []; //
+    let matchedWords = [];
 
     // **メッセージ内のワードを検出**
     specialWordsWithWeights.forEach(({ word, index }) => {
