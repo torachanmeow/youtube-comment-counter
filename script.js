@@ -547,12 +547,14 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
 
 // ギフトメンバーを贈ったメッセージの検出
 function isGiftedMembership(message) {
-    return message.includes("gifted") && message.includes("memberships");
+    return message.includes("gifted") &&
+           (message.includes("memberships") || message.includes("membership")) &&
+           !message.includes("was gifted");
 }
 
 // ギフトの受取人メッセージの検出
 function isReceivedGiftMembership(message) {
-    return message.includes("was gifted a membership by");
+    return message.includes("was gifted") && message.includes("membership");
 }
 
 // 新規メンバー加入のメッセージ（ギフト以外）
