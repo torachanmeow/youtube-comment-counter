@@ -17,7 +17,7 @@
             <div class="input-group">
                 <label for="apiKey">APIキー</label>
                 <div class="input-btn-container">
-                    <input type="password" id="apiKey" class="input-long" placeholder="APIキーを入力してください" value="">
+                    <input type="password" id="apiKey" class="input-medium" placeholder="APIキーを入力してください" value="">
                     <button id="toggleApiKeyBtn" class="toggle-btn">表示</button>
                 </div>
             </div>            
@@ -97,20 +97,19 @@
 
         <hr />
 
+        <!-- 最新取得 -->
+        <div class="latest-info">
+            最新取得：<span id="lastFetchTime">00:00:00</span>
+        </div>
+
         <!-- ステータス表示 -->
         <div id="status" class="status"></div>
 
-        <!-- 最新のコメント取得時間 -->
+        <!-- 合計ポイント -->
         <div class="line-control">
-            <h2>コメント取得時刻</h2>
-            <div id="lastFetchTime" class="fetch-time">未取得</div>
+            <h2>合計ポイント</h2>
         </div>
-
-        <!-- 合計ポイント表示 -->
-        <div class="line-control">
-            <h2>ポイント換算の集計値</h2>
-            <div id="totalPointsDisplay" class="fetch-time">0</div>
-        </div>
+        <div id="totalPointsDisplay" class="fetch-time">0</div>
 
         <hr />
 
@@ -198,20 +197,20 @@
             <span class="exchangeRates-close" id="closeModal">&times;</span>
             <h2>為替レート設定</h2>
             <div class="exchangeRates-scrollable">
-                <table>
+                <table id="exchangeRateTable">
                     <thead>
                         <tr>
-                            <th>通貨</th>
+                            <th id="sortableCurrencyHeader" class="sortable">コード <span id="currencySortArrow">▲</span></th>
+                            <th>国</th>
                             <th>レート</th>
                         </tr>
                     </thead>
-                    <tbody id="exchangeRateTable">
+                    <tbody>
                         <!-- 動的にリストを生成 -->
                     </tbody>
                 </table>
             </div>
-            <!-- ボタンを並べるためのコンテナ -->
-            <div class="exchangeRates-buttons">          
+            <div class="exchangeRates-buttons">
                 <button id="saveExchangeRates" class="exchangeRates-btn">保存</button>
             </div>
         </div>

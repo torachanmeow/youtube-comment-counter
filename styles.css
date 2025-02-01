@@ -74,13 +74,13 @@ body {
 .input-group {
     display: grid;
     font-size: 14px;
-    grid-template-columns: 150px 1fr 50px 100px;
+    grid-template-columns: 150px 400px 30px 0px;
     align-items: center;
     gap: 12px;
     margin-bottom: 5px;
     background-color: #DEE2E6; /* さらに明るいグレー */
     border-radius: 6px;
-    padding: 8px;
+    padding: 4px;
 }
 
 /* ラベル */
@@ -209,30 +209,38 @@ body {
     color: #495057;
 }
 
-/* 最新のコメント取得時間 */
-.fetch-time {
-    font-size: 24px;
-    font-weight: bold;
-    color: #495057;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    text-align: center;
-    min-width: 300px;
-}
-
 /* 合計ポイントの表示 */
 #totalPointsDisplay {
-    font-size: 24px;
+    display: flex;
+    flex-direction: column;
+    font-size: 30px;
     font-weight: bold;
     color: #495057;
-    padding: 20px;
-    background-color: #f9f9f9;
+    padding: 15px;
+    text-align: right;
+    padding: 10px;
     border: 1px solid #dee2e6;
     border-radius: 4px;
-    text-align: center;
-    min-width: 300px;
+    background-color: #f9f9f9;
+}
+
+/* 最新のコメント取得時間 */
+.latest-info {
+    font-size: 16px; /* 少し大きめ */
+    color: #495057; /* 目に優しいダークグレー */
+    font-weight: bold; /* 文字を少し強調 */
+    text-align: right; /* 右寄せ */
+    padding: 8px 15px; /* 余白を調整 */
+    display: flex; /* フレックスボックスを使用 */
+    justify-content: flex-end; /* 右寄せ */
+    align-items: center; /* 垂直方向の中央揃え */
+}
+
+/* カウンターのスタイル */
+#lastFetchTime {
+    font-family: "Courier New", monospace; /* 等幅フォントで見やすく */
+    font-size: 18px; /* 数字を見やすく */
+    color: #d63384; /* 目立つ色 */
 }
 
 /* 集計結果 */
@@ -240,21 +248,18 @@ body {
     display: flex;
     flex-direction: column;
     background-color: #E3F2FD; /* 薄い青 */
-    padding: 15px;
+    padding: 5px 15px 5px 15px;
     border: 1px solid #BBDEFB; /* さらに淡いブルー */
     border-radius: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 4px rgba(100, 149, 237, 0.2); /* ふんわりした影 */
 }
 
 /* 見出し */
 .stats-container h2 {
-    margin: 0 0 10px 0;
-    font-size: 18px;
+    font-size: 12px;
     color: #1565C0; /* 落ち着いたブルー */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin-bottom: 10px;
 }
 
 /* 各統計項目 */
@@ -288,7 +293,7 @@ body {
     display: flex;
     flex-direction: column;
     background-color: #FDE8EF; /* 優しいピンク */
-    padding: 15px;
+    padding: 5px 15px 5px 15px;
     border: 1px solid #F5C6CB; /* 淡いピンクのボーダー */
     border-radius: 8px;
     margin-bottom: 20px;
@@ -297,7 +302,7 @@ body {
 
 /* セクションタイトル */
 .points-container h2 {
-    font-size: 18px;
+    font-size: 12px;
     color: #C2185B; /* 落ち着いたピンク */
     margin-bottom: 10px;
 }
@@ -475,7 +480,7 @@ body {
 .exchangeRates-modal-content {
     background: #F8F9FA;
     padding: 20px;
-    width: 400px;
+    width: 500px;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     position: fixed;
@@ -560,10 +565,112 @@ tbody tr:hover {
     transition: background 0.2s;
 }
 
-/* ボタンを中央に配置するコンテナ */
+/* 為替レートテーブル全体のスタイル */
+#exchangeRateTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+/* ヘッダーの固定 */
+#exchangeRateTable thead {
+    margin: 0;
+    padding: 0;
+    position: sticky; /* スクロールしても固定 */
+    top: 0;
+    background: #E9ECEF; /* 背景色を設定し、スクロール時に視認性を確保 */
+    z-index: 100;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ヘッダー（通貨コード・国名・レート） */
+#exchangeRateTable th {
+    height: 48px; 
+    box-sizing: border-box;
+    font-size: 16px;
+    padding: 12px;
+    background: #E9ECEF; /* 明るいグレー */
+    color: #495057; /* ダークグレー */
+    text-align: center;
+    border-bottom: 2px solid #ADB5BD;
+}
+
+/* 列幅の調整 */
+#exchangeRateTable th:nth-child(1), /* 通貨コード */
+#exchangeRateTable td:nth-child(1) {
+    width: 20%;
+}
+
+#exchangeRateTable th:nth-child(2), /* 国名 */
+#exchangeRateTable td:nth-child(2) {
+    width: 40%; /* 国名列を大きめに */
+    font-size: 16px;
+    font-weight: bold;
+    padding-left: 10px;
+}
+
+#exchangeRateTable th:nth-child(3), /* レート */
+#exchangeRateTable td:nth-child(3) {
+    width: 30%;
+    text-align: center;
+}
+
+/* レートの入力欄を右詰め・見やすく */
+#exchangeRateTable input[type="number"] {
+    text-align: right;
+    width: 100px; /* コンパクトに調整 */
+    height: 32px; /* 適度な高さ */
+    font-size: 16px; /* 少し大きく */
+    font-weight: bold; /* 太字で視認性向上 */
+    padding-right: 10px; /* 右側の余白を確保 */
+    border: 1px solid #ADB5BD; /* 落ち着いたグレーの枠 */
+    border-radius: 4px; /* 角を少し丸める */
+    background-color: #ffffff; /* 白背景 */
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* フォーカス時の強調（モーダル以外のスタイルに統一） */
+#exchangeRateTable input[type="number"]:focus {
+    border-color: #6C757D; /* 少し濃いグレー */
+    box-shadow: 0 0 6px rgba(108, 117, 125, 0.4); /* 控えめな影 */
+    outline: none;
+}
+
+/* 数値セル（レート入力欄）を右詰め */
+#exchangeRateTable td:nth-child(3) {
+    text-align: right;
+    font-size: 16px; /* 適度なサイズ */
+    font-weight: bold; /* 見やすく */
+    padding-right: 10px;
+}
+
+/* 交互の行の背景色 */
+#exchangeRateTable tbody tr:nth-child(even) {
+    background: #F8F9FA; /* 淡いグレー */
+}
+
+/* ホバー時のハイライト */
+#exchangeRateTable tbody tr:hover {
+    background: #DEE2E6; /* やや濃いグレー */
+    transition: background 0.2s;
+}
+
+/* モーダルウィンドウのスクロール領域 */
+.exchangeRates-scrollable {
+    max-height: 350px; /* スクロール可能領域 */
+    overflow-y: auto; /* 縦スクロール有効 */
+    border: 1px solid #CED4DA;
+    border-radius: 6px;
+    background-color: #E9ECEF;
+    padding: 10px;
+    position: relative; /* 相対位置 */
+    padding: 0;
+}
+
+/* 為替レート設定モーダルのボタン配置 */
 .exchangeRates-buttons {
     display: flex;
-    justify-content: center; /* 中央揃え */
+    justify-content: center;
     margin-top: 10px;
 }
 
@@ -579,9 +686,10 @@ tbody tr:hover {
     cursor: pointer;
     transition: background 0.3s;
     text-align: center;
-    min-width: 150px; /* ボタンのサイズを一定に */
+    min-width: 150px;
 }
 
+/* ボタンのホバー時 */
 .exchangeRates-btn:hover {
     background: #0056b3;
 }

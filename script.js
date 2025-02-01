@@ -7,6 +7,51 @@ const MAX_CHAT_LINES = 500;  // 最大表示チャット行数（画面に見え
 const MAX_MESSAGE_IDS = 5000; // 取得済みメッセージIDの最大数（カウント管理用）
 const USER_HISTORY_LIMIT = 1000; // 最大ユーザー数 (重複コメントカウント管理用)
 
+// 通貨コードと国名のマッピング
+const currencyCountryMap = {
+    "USD": "アメリカ",
+    "EUR": "ユーロ圏",
+    "JPY": "日本",
+    "GBP": "イギリス",
+    "CHF": "スイス",
+    "CAD": "カナダ",
+    "AUD": "オーストラリア",
+    "NZD": "ニュージーランド",
+    "CNY": "中国",
+    "HKD": "香港",
+    "SGD": "シンガポール",
+    "KRW": "韓国",
+    "INR": "インド",
+    "BRL": "ブラジル",
+    "RUB": "ロシア",
+    "MXN": "メキシコ",
+    "ZAR": "南アフリカ",
+    "TRY": "トルコ",
+    "SEK": "スウェーデン",
+    "NOK": "ノルウェー",
+    "DKK": "デンマーク",
+    "PLN": "ポーランド",
+    "CZK": "チェコ",
+    "HUF": "ハンガリー",
+    "MYR": "マレーシア",
+    "THB": "タイ",
+    "IDR": "インドネシア",
+    "VND": "ベトナム",
+    "CLP": "チリ",
+    "COP": "コロンビア",
+    "PEN": "ペルー",
+    "ISK": "アイスランド",
+    "BGN": "ブルガリア",
+    "HRK": "クロアチア",
+    "RON": "ルーマニア",
+    "KZT": "カザフスタン",
+    "SAR": "サウジアラビア",
+    "AED": "アラブ首長国連邦",
+    "PHP": "フィリピン",
+    "TWD": "台湾",
+    "ARS": "アルゼンチン"
+};
+
 // 為替レートの初期値
 let exchangeRates = JSON.parse(localStorage.getItem('LiveChatExchangeRate'))?.exchangeRates || {
     // 主要通貨（メジャーカレンシー / G10通貨）
@@ -613,7 +658,7 @@ startBtn.addEventListener('click', async () => {
     wordCountsContainer.innerHTML = ''; // 特定ワードカウントをクリア
     updateStatsDisplay(liveChatData.stats); // 集計結果をリセット
     statusDiv.textContent = ''; // ステータスをリセット
-    lastFetchTimeDiv.textContent = '未取得'; // 最新取得時間をリセット
+    lastFetchTimeDiv.textContent = '00:00:00'; // 最新取得時間をリセット
 
     disableInputs(true);
 
@@ -731,20 +776,6 @@ function setupAutoSave() {
     });
 }
 
-// 為替レートリストをモーダル画面のリストに展開
-function renderExchangeRates() {
-    const tableBody = document.getElementById('exchangeRateTable');
-    tableBody.innerHTML = '';
-    Object.keys(exchangeRates).forEach(currency => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${currency}</td>
-            <td><input type="number" step="0.01" value="${exchangeRates[currency]}" data-currency="${currency}"></td>
-        `;
-        tableBody.appendChild(row);
-    });
-}
-
 // 為替レートの状態を更新する関数
 function updateExchangeRateDisplay() {
     const exchangeRateInput = document.getElementById('exchangeRateInput'); // 入力欄の要素
@@ -830,10 +861,52 @@ saveExchangeRatesBtn.addEventListener('click', () => {
     modal.classList.remove('show');
 });
 
+// 通貨ソート用の関数
+function setupCurrencySorting() {
+    const currencyHeader = document.getElementById("sortableCurrencyHeader");
+    const currencySortArrow = document.getElementById("currencySortArrow");
+    let ascending = true; // 初期状態は昇順
+
+    // ヘッダークリック時にソート方向を切り替え
+    currencyHeader.addEventListener("click", function () {
+        ascending = !ascending; // 昇順・降順を切り替え
+        currencySortArrow.textContent = ascending ? "▲" : "▼"; // 矢印を変更
+        renderExchangeRates(ascending); // ソートを適用して再描画
+    });
+
+    // 初回表示は昇順
+    renderExchangeRates(ascending);
+}
+
+// 通貨リストをテーブルに表示する関数
+function renderExchangeRates(ascending = true) {
+    const table = document.getElementById("exchangeRateTable");
+    const tableBody = table.querySelector("tbody");
+
+    tableBody.innerHTML = '';
+
+    // 通貨コード順にソート
+    const sortedRates = Object.entries(exchangeRates).sort((a, b) =>
+        ascending ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0])
+    );
+
+    sortedRates.forEach(([currency, rate]) => {
+        const country = currencyCountryMap[currency] || "不明"; // 国名を取得（未定義なら"不明"）
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${currency}</td>
+            <td>${country}</td>
+            <td><input type="number" step="0.01" value="${rate}" data-currency="${currency}"></td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
 // ページロード時に設定を適用し、イベントリスナーを設定
 window.addEventListener('DOMContentLoaded', () => {
     loadSettings(); // 画面設定をロードする関数
     setupAutoSave(); // イベントリスナー設定
-    renderExchangeRates(); // 為替レートリストのDOM展開
+    setupCurrencySorting(); // 通貨のソート機能を適用
     updateExchangeRateDisplay(); // 為替レートの状態を更新
 });
