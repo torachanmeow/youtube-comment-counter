@@ -464,6 +464,10 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
     
     try {
         const data = await fetchYouTubeAPI(url);
+
+        // YouTube APIのレスポンスデータを時系列順にソート
+        data.items.sort((a, b) => new Date(a.snippet.publishedAt) - new Date(b.snippet.publishedAt));
+
         if (data && data.items) {
             data.items.forEach(item => {
                 try {
