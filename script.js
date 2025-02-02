@@ -2,6 +2,7 @@ let liveChatPolling = null;
 let liveChatData = null;
 let pendingGiftCount = 0; // 受け取る予定のギフトメンバー数
 let userWordHistory = {}; // ユーザーごとの発言履歴を保存するオブジェクト
+let isPollingActive = false; // ポーリング状態を管理するフラグ
 
 const MAX_CHAT_LINES = 500;  // 最大表示チャット行数（画面に見える数）
 const MAX_MESSAGE_IDS = 5000; // 取得済みメッセージIDの最大数（カウント管理用）
@@ -303,6 +304,8 @@ function countWords(authorId, message, specialWordsWithWeights) {
         message = String(message); // 数値なら文字列に変換
     }
 
+    message = sanitizeHTML(message); // XSS対策:サニタイズ処理を適用(youtubeでフィルタされると思うのだが、念のため)
+
     if (!userWordHistory[authorId]) {
         userWordHistory[authorId] = { words: new Set(), lastActive: Date.now() };
     }
@@ -341,6 +344,13 @@ function countWords(authorId, message, specialWordsWithWeights) {
     });
 
     return message;
+}
+
+// 安全な HTML に変換する関数を追加
+function sanitizeHTML(str) {
+    const tempDiv = document.createElement('div'); // 仮の div を作る
+    tempDiv.textContent = str; // テキストとしてセット (HTMLタグをエスケープ)
+    return tempDiv.innerHTML; // エスケープ済みの HTML を返す
 }
 
 // ライブチャットデータの初期化
@@ -442,112 +452,126 @@ function displayVideoDetails(details) {
 
 // チャットメッセージを取得して表示
 async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
+    if (!liveChatId) {
+        console.error("エラー: liveChatId が未設定");
+        return;
+    }
+
     const url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails&maxResults=500&key=${apiKey}`;
-    const data = await fetchYouTubeAPI(url);
-
-    if (data && data.items) {
-        data.items.forEach(item => {
-            const messageId = item.id;
-            const authorId = item.authorDetails.channelId;
-            const authorName = item.authorDetails.displayName;
-            let message = item.snippet.displayMessage;
-
-            if (!isInitialLoad && liveChatData.fetchedMessageIds.has(messageId)) {
-                return; // 既に取得済みならスキップ
-            }
-            liveChatData.fetchedMessageIds.add(messageId);
-
-            // **チャットメッセージの表示エリアを作成**
-            const chatMessageDiv = document.createElement('div');
-            chatMessageDiv.className = 'chat-message';
-
-            // **名前部分**
-            const authorSpan = document.createElement('span');
-            authorSpan.className = 'chat-author';
-            authorSpan.textContent = `[${authorName}] `;
-
-            // **メッセージ部分**
-            const messageSpan = document.createElement('span');
-            messageSpan.className = 'chat-text';
-
-            // 特定ワードと重みを ペアで管理 するオブジェクトリストを取得
-            const specialWordsWithWeights = getSpecialWordsWithWeights();
-
-            // **特定ワードをカウントしつつ、ハイライトを適用**
-            message = countWords(authorId, message, specialWordsWithWeights);
-            messageSpan.innerHTML = message; // ハイライト適用済みのメッセージ
-
-            // **スーパーチャットの処理**
-            if (item.snippet.superChatDetails) {
-                const amount = parseFloat(item.snippet.superChatDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
-                const currency = item.snippet.superChatDetails.currency;
-                const jpyAmount = convertToJPY(amount, currency);
-
-                if (jpyAmount !== null) {
-                    messageSpan.classList.add('chat-superchat'); // **赤色**
-                    messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
-                    liveChatData.stats.superChats += jpyAmount;
-                } else {
-                    console.warn(`サポートされていない通貨: ${currency}`);
+    
+    try {
+        const data = await fetchYouTubeAPI(url);
+        if (data && data.items) {
+            data.items.forEach(item => {
+                try {
+                    const messageId = item.id;
+                    const authorId = item.authorDetails.channelId;
+                    const authorName = item.authorDetails.displayName;
+                    let message = item.snippet.displayMessage;
+        
+                    if (!isInitialLoad && liveChatData.fetchedMessageIds.has(messageId)) {
+                        return; // 既に取得済みならスキップ
+                    }
+                    liveChatData.fetchedMessageIds.add(messageId);
+        
+                    // **チャットメッセージの表示エリアを作成**
+                    const chatMessageDiv = document.createElement('div');
+                    chatMessageDiv.className = 'chat-message';
+        
+                    // **名前部分**
+                    const authorSpan = document.createElement('span');
+                    authorSpan.className = 'chat-author';
+                    authorSpan.textContent = `[${authorName}] `;
+        
+                    // **メッセージ部分**
+                    const messageSpan = document.createElement('span');
+                    messageSpan.className = 'chat-text';
+        
+                    // 特定ワードと重みを ペアで管理 するオブジェクトリストを取得
+                    const specialWordsWithWeights = getSpecialWordsWithWeights();
+        
+                    // **特定ワードをカウントしつつ、ハイライトを適用**
+                    message = countWords(authorId, message, specialWordsWithWeights);
+                    messageSpan.innerHTML = message; // ハイライト適用済みのメッセージ
+        
+                    // **スーパーチャットの処理**
+                    if (item.snippet.superChatDetails) {
+                        const amount = parseFloat(item.snippet.superChatDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
+                        const currency = item.snippet.superChatDetails.currency;
+                        const jpyAmount = convertToJPY(amount, currency);
+        
+                        if (jpyAmount !== null) {
+                            messageSpan.classList.add('chat-superchat'); // **赤色**
+                            messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
+                            liveChatData.stats.superChats += jpyAmount;
+                        } else {
+                            console.warn(`サポートされていない通貨: ${currency}`);
+                        }
+                    }
+        
+                    // **スーパーステッカーの処理**
+                    if (item.snippet.superStickerDetails) {
+                        const amount = parseFloat(item.snippet.superStickerDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
+                        const currency = item.snippet.superStickerDetails.currency;
+                        const jpyAmount = convertToJPY(amount, currency);
+        
+                        if (jpyAmount !== null) {
+                            messageSpan.classList.add('chat-supersticker'); // **赤色**
+                            messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
+                            liveChatData.stats.superStickers += jpyAmount;
+                        }
+                    }
+        
+                    // **ギフトメンバーの送信**
+                    if (isGiftedMembership(message)) {
+                        const giftCount = getGiftedMembershipCount(message);
+                        if (giftCount > 0) {
+                            messageSpan.classList.add('chat-member'); // **緑色**
+                            messageSpan.textContent += ` => ${giftCount}名にギフトメンバーシップが贈られました！`;
+        
+                            liveChatData.stats.members += giftCount;  // ギフト数をそのままメンバー数に加算
+                        }
+                    }
+        
+                    // **ギフトメンバーの受取**
+                    if (isReceivedGiftMembership(message)) {
+                        messageSpan.classList.add('chat-member'); // **緑色**
+                        messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
+                    }
+        
+                    // **通常のメンバー加入**
+                    if (isNewMember(message)) {
+                        messageSpan.classList.add('chat-member'); // **緑色**
+                        messageSpan.textContent += ` => 通常の新規メンバー加入！`;
+                        liveChatData.stats.members++; // メンバーカウント
+                    }
+        
+                    // **名前とメッセージを追加**
+                    chatMessageDiv.appendChild(authorSpan);
+                    chatMessageDiv.appendChild(messageSpan);
+        
+                    // **チャット表示エリアに追加**
+                    liveChatDiv.appendChild(chatMessageDiv);
+        
+                    // **コメントデータを保存**
+                    liveChatData.comments.push({ id: messageId, message: `[${authorName}] ${message}` });
+                } catch(innerError){
+                    console.error("メッセージ処理中にエラー:", innerError);
                 }
-            }
+            });
 
-            // **スーパーステッカーの処理**
-            if (item.snippet.superStickerDetails) {
-                const amount = parseFloat(item.snippet.superStickerDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
-                const currency = item.snippet.superStickerDetails.currency;
-                const jpyAmount = convertToJPY(amount, currency);
-
-                if (jpyAmount !== null) {
-                    messageSpan.classList.add('chat-supersticker'); // **赤色**
-                    messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
-                    liveChatData.stats.superStickers += jpyAmount;
-                }
-            }
-
-            // **ギフトメンバーの送信**
-            if (isGiftedMembership(message)) {
-                const giftCount = getGiftedMembershipCount(message);
-                if (giftCount > 0) {
-                    messageSpan.classList.add('chat-member'); // **緑色**
-                    messageSpan.textContent += ` => ${giftCount}名にギフトメンバーシップが贈られました！`;
-
-                    liveChatData.stats.members += giftCount;  // ギフト数をそのままメンバー数に加算
-                }
-            }
-
-            // **ギフトメンバーの受取**
-            if (isReceivedGiftMembership(message)) {
-                messageSpan.classList.add('chat-member'); // **緑色**
-                messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
-            }
-
-            // **通常のメンバー加入**
-            if (isNewMember(message)) {
-                messageSpan.classList.add('chat-member'); // **緑色**
-                messageSpan.textContent += ` => 通常の新規メンバー加入！`;
-                liveChatData.stats.members++; // メンバーカウント
-            }
-
-            // **名前とメッセージを追加**
-            chatMessageDiv.appendChild(authorSpan);
-            chatMessageDiv.appendChild(messageSpan);
-
-            // **チャット表示エリアに追加**
-            liveChatDiv.appendChild(chatMessageDiv);
-
-            // **コメントデータを保存**
-            liveChatData.comments.push({ id: messageId, message: `[${authorName}] ${message}` });
-        });
-
-        // **統計を更新**
-        lastFetchTimeDiv.textContent = new Date().toLocaleTimeString();
-        updateStatsDisplay(liveChatData.stats);
-
-        // **表示制限とメモリ管理**
-        limitChatLines(); // 最新 MAX_CHAT_LINES 件だけ表示
-        cleanFetchedMessageIds(); // メモリ管理（最大 MAX_MESSAGE_IDS 件のメッセージIDを保持）
-        cleanLiveChatData();     // チャット履歴 & ユーザー履歴のメモリ管理
+            // **統計を更新**
+            lastFetchTimeDiv.textContent = new Date().toLocaleTimeString();
+            updateStatsDisplay(liveChatData.stats);
+    
+            // **表示制限とメモリ管理**
+            limitChatLines(); // 最新 MAX_CHAT_LINES 件だけ表示
+            cleanFetchedMessageIds(); // メモリ管理（最大 MAX_MESSAGE_IDS 件のメッセージIDを保持）
+            cleanLiveChatData();     // チャット履歴 & ユーザー履歴のメモリ管理
+        }
+    } 
+    catch (error) {
+        console.error("ライブチャット取得中にエラー:", error);
     }
 }
 
@@ -638,91 +662,142 @@ function convertToJPY(amount, currency) {
     return null; // サポートされていない通貨の場合
 }
 
+// ライブチャットと動画情報のポーリングを開始
+async function startPolling(apiKey, videoId) {
+    // 既存のポーリングを停止（重複実行を防ぐ）
+    clearInterval(liveChatPolling);
+
+    const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30;
+    
+    // ライブチャットIDを取得
+    const liveChatId = await getLiveChatId(apiKey, videoId);
+    if (!liveChatId) {
+        showNotification("ライブチャットIDが取得できませんでした", "error");
+        return;
+    }
+
+    // 初回のチャット取得
+    await fetchLiveChat(apiKey, liveChatId, true);
+
+    // ポーリング開始
+    liveChatPolling = setInterval(async () => {
+        await fetchLiveChat(apiKey, liveChatId, false);
+        await fetchVideoDetails(apiKey, videoId); // 高評価数なども更新
+    }, pollingInterval * 1000);
+}
+
 // 開始ボタンクリックイベント
 startBtn.addEventListener('click', async () => {
-    // 為替レートのロード
-    await loadExchangeRates();
-
-    // 為替レートが空の場合は処理を中止
-    if (Object.keys(exchangeRates).length === 0) {
-        showNotification("エラー: 為替レートが見つかりません。処理を中止します。", "error");
-        return;
+    if (isPollingActive) {
+        return; // 処理が進行中なら何もしない
     }
+    isPollingActive = true; // ポーリング開始中のフラグを立てる
     
-    const apiKey = apiKeyInput.value.trim();
-    const videoId = videoIdInput.value.trim();
-    const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30;
+    try {
+        // 為替レートのロード
+        await loadExchangeRates();
 
-    if (!apiKey || !videoId) {
-        // alert('APIキーと動画IDを入力してください。');
-        showNotification("APIキーと動画IDを入力してください。", "error");
-        return;
-    }
+        // 為替レートが空の場合は処理を中止
+        if (Object.keys(exchangeRates).length === 0) {
+            showNotification("エラー: 為替レートが見つかりません。処理を中止します。", "error");
+            return;
+        }
+        
+        const apiKey = apiKeyInput.value.trim();
+        const videoId = videoIdInput.value.trim();
+        if (!apiKey || !videoId) {
+            // alert('APIキーと動画IDを入力してください。');
+            showNotification("APIキーと動画IDを入力してください。", "error");
+            return;
+        }
 
-    // 集計結果、ライブチャット、動画情報をクリア
-    liveChatData = initializeLiveChatData(); // データを初期化
-    videoDetailsDiv.innerHTML = ''; // 動画情報をクリア
-    liveChatDiv.textContent = ''; // チャット内容をクリア
-    wordCountsContainer.innerHTML = ''; // 特定ワードカウントをクリア
-    updateStatsDisplay(liveChatData.stats); // 集計結果をリセット
-    statusDiv.textContent = ''; // ステータスをリセット
-    lastFetchTimeDiv.textContent = '00:00:00'; // 最新取得時間をリセット
+        // 集計結果、ライブチャット、動画情報をクリア
+        liveChatData = initializeLiveChatData(); // データを初期化
+        videoDetailsDiv.innerHTML = ''; // 動画情報をクリア
+        liveChatDiv.textContent = ''; // チャット内容をクリア
+        wordCountsContainer.innerHTML = ''; // 特定ワードカウントをクリア
+        updateStatsDisplay(liveChatData.stats); // 集計結果をリセット
+        statusDiv.textContent = ''; // ステータスをリセット
+        lastFetchTimeDiv.textContent = '00:00:00'; // 最新取得時間をリセット
 
-    disableInputs(true);
+        disableInputs(true);
 
-    const liveChatId = await getLiveChatId(apiKey, videoId);
-    const videoDetails = await getVideoDetails(apiKey, videoId);
+        const liveChatId = await getLiveChatId(apiKey, videoId);
+        const videoDetails = await getVideoDetails(apiKey, videoId);
 
-    if (liveChatId && videoDetails) {
-        liveChatData = initializeLiveChatData();
-        liveChatData.videoDetails = videoDetails;
-        liveChatData.stats.likes = videoDetails.likeCount || 0;
+        if (liveChatId && videoDetails) {
+            liveChatData = initializeLiveChatData();
+            liveChatData.videoDetails = videoDetails;
+            liveChatData.stats.likes = videoDetails.likeCount || 0;
 
-        // 動画情報を整形して表示
-        displayVideoDetails(videoDetails);
+            // 動画情報を整形して表示
+            displayVideoDetails(videoDetails);
 
-        // 点滅効果の付与
-        document.querySelector('.status').classList.add('executing');
+            // 点滅効果の付与
+            document.querySelector('.status').classList.add('executing');
 
-        // ステータス表示を更新
-        statusDiv.textContent = 'ライブチャット取得中...';
+            // ステータス表示を更新
+            statusDiv.textContent = 'ライブチャット取得中...';
 
-        showNotification("開始しました！");
+            showNotification("開始しました！");
 
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
 
-        // 初回のライブチャット取得
-        await fetchLiveChat(apiKey, liveChatId, true);
+            // 初回のライブチャット取得
+            await fetchLiveChat(apiKey, liveChatId, true);
 
-        // ライブチャットと動画情報のポーリングを開始
-        liveChatPolling = setInterval(() => {
-            fetchLiveChat(apiKey, liveChatId, false);
-            fetchVideoDetails(apiKey, videoId); // 高評価数なども更新
-        }, pollingInterval * 1000);
-    } else {
-        // alert('ライブチャットIDまたは動画情報が取得できませんでした。');
-        showNotification("ライブチャットIDまたは動画情報が取得できませんでした。", "error");
-        disableInputs(false);
+            // ライブチャットと動画情報のポーリングを開始
+            startPolling(apiKey, videoId);
+
+        } else {
+            // alert('ライブチャットIDまたは動画情報が取得できませんでした。');
+            showNotification("ライブチャットIDまたは動画情報が取得できませんでした。", "error");
+            disableInputs(false);
+        }      
+    } catch (error){
+        console.error("エラーが発生しました:", error);
+        showNotification("開始処理中にエラーが発生しました。", "error");
+    } finally {
+        isPollingActive = false; // フラグをリセット
+        stopBtn.disabled = false; // 停止ボタンを有効化
+        startBtn.disabled = true; // 開始ボタンを無効化
+        if (!liveChatPolling) {
+            disableInputs(false); // エラー時のみ入力欄を再有効化
+        }
     }
 });
 
 // 停止ボタンクリックイベント
 stopBtn.addEventListener('click', () => {
-    clearInterval(liveChatPolling); // ポーリングを停止
-    resetWordHistory(); // ユーザー履歴をリセット
-    liveChatPolling = null;
-
-    // 点滅効果の削除
-    document.querySelector('.status').classList.remove('executing');
-
-    // ステータスをリセット
-    statusDiv.textContent = ''; 
-
-    showNotification("停止しました！");
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    disableInputs(false);
+    if (!liveChatPolling) {
+        return; // ポーリングが進行していない場合は何もしない
+    }
+    
+    try {
+        if (liveChatPolling) {
+            clearInterval(liveChatPolling); // ポーリングを停止
+            liveChatPolling = null; // 明示的に null に設定
+        }
+    
+        resetWordHistory(); // ユーザー履歴をリセット
+    
+        // 点滅効果の削除
+        document.querySelector('.status').classList.remove('executing');
+    
+        // ステータスをリセット
+        statusDiv.textContent = ''; 
+    
+        showNotification("停止しました！");
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        disableInputs(false);
+    } catch(error) {
+        console.error("停止処理中にエラーが発生しました:", error);
+        showNotification("停止処理中にエラーが発生しました。", "error");
+    } finally {
+        isPollingActive = false; // 停止後にフラグをリセット
+    }
 });
 
 // APIキーのマスキング切り替えイベント
