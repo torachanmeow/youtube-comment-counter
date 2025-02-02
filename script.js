@@ -8,6 +8,8 @@ const MAX_CHAT_LINES = 500;  // 最大表示チャット行数（画面に見え
 const MAX_MESSAGE_IDS = 5000; // 取得済みメッセージIDの最大数（カウント管理用）
 const USER_HISTORY_LIMIT = 1000; // 最大ユーザー数 (重複コメントカウント管理用)
 const fetchedMessageIds = new Set(); // 取得済みメッセージIDのセット
+const fetchedSuperChats = new Set(); // // スーパーチャットの重複を防ぐためのセット
+const fetchedSuperStickers  = new Set(); // // スーパーチャットの重複を防ぐためのセット
 
 // 通貨コードと国名のマッピング
 const currencyCountryMap = {
@@ -476,20 +478,9 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                         fetchedMessageIds.delete([...fetchedMessageIds][0]); // 古いIDを削除
                     }
 
-                    // 取得間隔を考慮してスキップしきい値を計算 (メッセージIDの重複チェックで抜けてくる場合)
-                    const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30; // 入力値を秒単位で取得
-                    const skipThreshold = Math.max((pollingInterval / 60 || 1) * 2, 1); // 秒を分に変換し、最低1分を保証
-                    
-                    const messageTime = new Date(item.snippet.publishedAt);
-                    const now = new Date();
-                    const diffInMinutes = (now - messageTime) / (1000 * 60);
-
-                    if (diffInMinutes > skipThreshold) {
-                        return; // 閾値より古いメッセージはスキップ
-                    }
-
                     const authorId = item.authorDetails.channelId;
                     const authorName = item.authorDetails.displayName;
+                    const publishedAt = item.snippet.publishedAt; // 送信時刻（ISO 8601フォーマット）
                     let message = item.snippet.displayMessage;
         
                     if (!isInitialLoad && liveChatData.fetchedMessageIds.has(messageId)) {
@@ -522,7 +513,22 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                         const amount = parseFloat(item.snippet.superChatDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
                         const currency = item.snippet.superChatDetails.currency;
                         const jpyAmount = convertToJPY(amount, currency);
-        
+
+                        // **送信時間 (秒単位) を含めてキーを作成**
+                        const superChatKey = `${authorName}_${amount}_${currency}_${publishedAt}`;
+
+                        // **スーパーチャットの重複チェック**
+                        if (fetchedSuperChats.has(superChatKey)) {
+                            console.warn(`スーパーチャットの重複を検出: ${superChatKey}`);
+                            return;
+                        }
+                        fetchedSuperChats.add(superChatKey);
+
+                        // **直近のスパチャリストのメモリ管理**
+                        if (fetchedSuperChats.size > MAX_MESSAGE_IDS) {
+                            fetchedSuperChats.delete([...fetchedSuperChats][0]); // 古いスーパーチャットを削除
+                        }
+
                         if (jpyAmount !== null) {
                             messageSpan.classList.add('chat-superchat'); // **赤色**
                             messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
@@ -537,7 +543,22 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                         const amount = parseFloat(item.snippet.superStickerDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
                         const currency = item.snippet.superStickerDetails.currency;
                         const jpyAmount = convertToJPY(amount, currency);
-        
+                        
+                        // **送信時間 (秒単位) を含めてキーを作成**
+                        const superStickerKey = `${authorName}_${amount}_${currency}_${publishedAt}`;
+
+                        // **スーパーステッカーは「送信時刻」も考慮して重複チェック**
+                        if (fetchedSuperStickers.has(superStickerKey)) {
+                            console.warn(`スーパーステッカーの重複を検出: ${superStickerKey}`);
+                            return;
+                        }
+                        fetchedSuperStickers.add(superStickerKey);
+
+                        // **直近のステッカーリストのメモリ管理**
+                        if (fetchedSuperStickers.size > MAX_MESSAGE_IDS) {
+                            fetchedSuperStickers.delete([...fetchedSuperStickers][0]); // 古いスーパーステッカーを削除
+                        }
+
                         if (jpyAmount !== null) {
                             messageSpan.classList.add('chat-supersticker'); // **赤色**
                             messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
@@ -565,7 +586,14 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                     // **通常のメンバー加入**
                     if (isNewMember(message)) {
                         messageSpan.classList.add('chat-member'); // **緑色**
-                        messageSpan.textContent += ` => 通常の新規メンバー加入！`;
+                        messageSpan.textContent += ` => 新規メンバーシップ加入！`;
+                        liveChatData.stats.members++; // メンバーカウント
+                    }
+
+                    // **メンバーシップのアップグレード**
+                    if (isUpgradedMembership(message)) {
+                        messageSpan.classList.add('chat-member'); // **緑色**
+                        messageSpan.textContent += ` => メンバーシップアップグレード！`;
                         liveChatData.stats.members++; // メンバーカウント
                     }
         
@@ -610,9 +638,14 @@ function isReceivedGiftMembership(message) {
     return message.includes("was gifted") && message.includes("membership");
 }
 
-// 新規メンバー加入のメッセージ（ギフト以外）
+// 新規メンバシップ加入のメッセージ（ギフト以外）
 function isNewMember(message) {
     return message.includes("just became a member!");
+}
+
+// メンバーシップのアップグレードメッセージ
+function isUpgradedMembership(message) {
+    return message.includes("just upgraded their membership!");
 }
 
 // ギフトメンバーの人数を取得（デフォルト1人）
@@ -692,8 +725,10 @@ async function startPolling(apiKey, videoId) {
 
     const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30;
 
-    // メッセージIDの履歴をリセット
-    fetchedMessageIds.clear();
+    // メモリをクリア
+    fetchedMessageIds.clear(); 
+    fetchedSuperChats.clear();
+    fetchedSuperStickers.clear();
     
     // ライブチャットIDを取得
     const liveChatId = await getLiveChatId(apiKey, videoId);
@@ -702,14 +737,15 @@ async function startPolling(apiKey, videoId) {
         return;
     }
 
-    // 初回のチャット取得
-    await fetchLiveChat(apiKey, liveChatId, true);
-
-    // ポーリング開始
+    // **ポーリング開始 & 初回取得を統合**
     liveChatPolling = setInterval(async () => {
         await fetchLiveChat(apiKey, liveChatId, false);
-        await fetchVideoDetails(apiKey, videoId); // 高評価数なども更新
+        await fetchVideoDetails(apiKey, videoId);
     }, pollingInterval * 1000);
+  
+    // 初回のチャット取得
+    await fetchLiveChat(apiKey, liveChatId, false);
+    await fetchVideoDetails(apiKey, videoId);
 }
 
 // 開始ボタンクリックイベント
