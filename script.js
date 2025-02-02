@@ -692,6 +692,7 @@ startBtn.addEventListener('click', async () => {
         return; // 処理が進行中なら何もしない
     }
     isPollingActive = true; // ポーリング開始中のフラグを立てる
+    let pollingStarted = false; // ポーリング開始フラグ
     
     try {
         // 為替レートのロード
@@ -750,6 +751,7 @@ startBtn.addEventListener('click', async () => {
             // ライブチャットと動画情報のポーリングを開始
             startPolling(apiKey, videoId);
 
+            pollingStarted = true; // ポーリングが正常に開始されたことを記録
         } else {
             // alert('ライブチャットIDまたは動画情報が取得できませんでした。');
             showNotification("ライブチャットIDまたは動画情報が取得できませんでした。", "error");
@@ -760,10 +762,11 @@ startBtn.addEventListener('click', async () => {
         showNotification("開始処理中にエラーが発生しました。", "error");
     } finally {
         isPollingActive = false; // フラグをリセット
-        stopBtn.disabled = false; // 停止ボタンを有効化
-        startBtn.disabled = true; // 開始ボタンを無効化
-        if (!liveChatPolling) {
-            disableInputs(false); // エラー時のみ入力欄を再有効化
+        if (!pollingStarted) {
+            // ポーリングが開始できなかった場合に元の状態に戻す
+            stopBtn.disabled = true;
+            startBtn.disabled = false;
+            disableInputs(false);
         }
     }
 });
