@@ -7,6 +7,7 @@ let isPollingActive = false; // ポーリング状態を管理するフラグ
 const MAX_CHAT_LINES = 500;  // 最大表示チャット行数（画面に見える数）
 const MAX_MESSAGE_IDS = 5000; // 取得済みメッセージIDの最大数（カウント管理用）
 const USER_HISTORY_LIMIT = 1000; // 最大ユーザー数 (重複コメントカウント管理用)
+const fetchedMessageIds = new Set(); // 取得済みメッセージIDのセット
 
 // 通貨コードと国名のマッピング
 const currencyCountryMap = {
@@ -465,6 +466,28 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
             data.items.forEach(item => {
                 try {
                     const messageId = item.id;
+
+                    // メッセージIDの重複チェック
+                    if (fetchedMessageIds.has(messageId)) {
+                        return;
+                    }
+                    fetchedMessageIds.add(messageId);
+                    if (fetchedMessageIds.size > MAX_MESSAGE_IDS) {
+                        fetchedMessageIds.delete([...fetchedMessageIds][0]); // 古いIDを削除
+                    }
+
+                    // 取得間隔を考慮してスキップしきい値を計算 (メッセージIDの重複チェックで抜けてくる場合)
+                    const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30; // 入力値を秒単位で取得
+                    const skipThreshold = Math.max((pollingInterval / 60 || 1) * 2, 1); // 秒を分に変換し、最低1分を保証
+                    
+                    const messageTime = new Date(item.snippet.publishedAt);
+                    const now = new Date();
+                    const diffInMinutes = (now - messageTime) / (1000 * 60);
+
+                    if (diffInMinutes > skipThreshold) {
+                        return; // 閾値より古いメッセージはスキップ
+                    }
+
                     const authorId = item.authorDetails.channelId;
                     const authorName = item.authorDetails.displayName;
                     let message = item.snippet.displayMessage;
@@ -668,6 +691,9 @@ async function startPolling(apiKey, videoId) {
     clearInterval(liveChatPolling);
 
     const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30;
+
+    // メッセージIDの履歴をリセット
+    fetchedMessageIds.clear();
     
     // ライブチャットIDを取得
     const liveChatId = await getLiveChatId(apiKey, videoId);
