@@ -368,52 +368,115 @@ function initializeLiveChatData() {
 
 // APIリクエストの共通関数
 async function fetchYouTubeAPI(url) {
+    const controller = new AbortController(); // タイムアウト制御用
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10秒でタイムアウト
+
     try {
-        const response = await fetch(url);
+        // APIリクエストを送信
+        const response = await fetch(url, { signal: controller.signal });
+
+        // タイムアウト解除
+        clearTimeout(timeout);
+
+        // レスポンスのステータスを確認
         if (!response.ok) {
-            throw new Error(`HTTPエラー: ${response.status}`);
+            const errorData = await response.json();
+            const error = new Error("APIエラーが発生しました。");
+            error.reason = errorData.error?.errors?.[0]?.reason || "unknown";
+            error.details = { url, status: response.status, response: errorData };
+            throw error;
         }
+
+        // JSONレスポンスを返す
         return await response.json();
     } catch (error) {
-        console.error('APIリクエストエラー:', error);
-        return null;
+        if (error.name === "AbortError") {
+            error.reason = "timeout";
+            error.details = { url };
+            console.error("APIリクエストがタイムアウトしました:", url);
+        } else if (!error.reason) {
+            error.reason = "unknown";
+            error.details = { url };
+        }
+        throw error;
+    } finally {
+        // タイムアウトクリア（念のため）
+        clearTimeout(timeout);
     }
 }
 
 // ライブチャットIDを取得
 async function getLiveChatId(apiKey, videoId) {
     const url = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${apiKey}`;
-    const data = await fetchYouTubeAPI(url);
-    if (data && data.items && data.items.length > 0) {
-        return data.items[0].liveStreamingDetails?.activeLiveChatId || null;
+    try {
+        const data = await fetchYouTubeAPI(url);
+
+        if (!data || !data.items || data.items.length === 0) {
+            const error = new Error("動画情報が取得できません。動画IDが無効です。");
+            error.reason = "invalidVideoId"; // エラー種別を追加
+            error.details = { videoId, apiKey }; // デバッグ用の詳細情報
+            throw error;
+        }
+
+        const liveChatId = data.items[0].liveStreamingDetails?.activeLiveChatId;
+        if (!liveChatId) {
+            const error = new Error("ライブチャットが無効または存在しない可能性があります。");
+            error.reason = "noLiveChat"; // エラー種別を追加
+            error.details = { videoId, apiKey }; // デバッグ用の詳細情報
+            throw error;
+        }
+
+        return liveChatId;
+    } catch (error) {
+        if (!error.reason) {
+            // ネットワークエラーやその他の不明なエラーの場合にデフォルトの情報を付加
+            error.reason = "unknown";
+            error.details = { url, videoId, apiKey };
+        }
+        throw error;
     }
-    return null;
 }
 
 // 動画情報を取得
 async function getVideoDetails(apiKey, videoId) {
     const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${apiKey}`;
-    const data = await fetchYouTubeAPI(url);
-    if (data && data.items && data.items.length > 0) {
-        const video = data.items[0];
+    try {
+        const data = await fetchYouTubeAPI(url);
+
+        if (!data || !data.items || data.items.length === 0) {
+            const error = new Error("動画情報が取得できません。動画IDが無効です。");
+            error.reason = "invalidVideoId";
+            error.details = { videoId, url };
+            throw error;
+        }
+
         return {
-            title: video.snippet.title,
-            publishedAt: video.snippet.publishedAt,
-            channelTitle: video.snippet.channelTitle,
-            likeCount: parseInt(video.statistics.likeCount || '0', 10),
+            title: data.items[0].snippet.title,
+            publishedAt: data.items[0].snippet.publishedAt,
+            channelTitle: data.items[0].snippet.channelTitle,
+            likeCount: parseInt(data.items[0].statistics.likeCount || "0", 10),
         };
+    } catch (error) {
+        if (!error.reason) {
+            error.reason = "unknown";
+            error.details = { videoId, url };
+        }
+        throw error;
     }
-    return null;
 }
 
 // 動画情報を定期的に取得
 async function fetchVideoDetails(apiKey, videoId) {
-    const videoDetails = await getVideoDetails(apiKey, videoId);
-    if (videoDetails) {
-        liveChatData.videoDetails = videoDetails; // 動画情報を更新
-        liveChatData.stats.likes = videoDetails.likeCount || 0; // 高評価数を更新
-        updateStatsDisplay(liveChatData.stats); // 統計データを表示に反映
-        displayVideoDetails(videoDetails); // 整形して動画情報を表示
+    try {
+        const videoDetails = await getVideoDetails(apiKey, videoId);
+        if (videoDetails) {
+            liveChatData.videoDetails = videoDetails; // 動画情報を更新
+            liveChatData.stats.likes = videoDetails.likeCount || 0; // 高評価数を更新
+            updateStatsDisplay(liveChatData.stats); // 統計データを表示に反映
+            displayVideoDetails(videoDetails); // 整形して動画情報を表示
+        }
+    } catch (error) {
+        throw error;
     }
 }
 
@@ -465,12 +528,22 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
     try {
         const data = await fetchYouTubeAPI(url);
 
+        if (!data || !data.items) {
+            console.warn("ライブチャットデータが無効です。スキップします。");
+            return;
+        }
+
         // YouTube APIのレスポンスデータを時系列順にソート
         data.items.sort((a, b) => new Date(a.snippet.publishedAt) - new Date(b.snippet.publishedAt));
 
         if (data && data.items) {
             data.items.forEach(item => {
                 try {
+                    // **表示するコンテンツがない場合は即リターン**
+                    if (item.snippet.hasDisplayContent === false) {
+                        return;
+                    }
+
                     const messageId = item.id;
 
                     // メッセージIDの重複チェック
@@ -479,13 +552,12 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                     }
                     fetchedMessageIds.add(messageId);
                     if (fetchedMessageIds.size > MAX_MESSAGE_IDS) {
-                        fetchedMessageIds.delete([...fetchedMessageIds][0]); // 古いIDを削除
+                        fetchedMessageIds.delete(fetchedMessageIds.values().next().value);
                     }
 
                     const authorId = item.authorDetails.channelId;
                     const authorName = item.authorDetails.displayName;
                     const publishedAt = item.snippet.publishedAt; // 送信時刻（ISO 8601フォーマット）
-                    let message = item.snippet.displayMessage;
         
                     if (!isInitialLoad && liveChatData.fetchedMessageIds.has(messageId)) {
                         return; // 既に取得済みならスキップ
@@ -509,6 +581,7 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                     const specialWordsWithWeights = getSpecialWordsWithWeights();
         
                     // **特定ワードをカウントしつつ、ハイライトを適用**
+                    let message = item.snippet.displayMessage || "";
                     message = countWords(authorId, message, specialWordsWithWeights);
                     messageSpan.innerHTML = message; // ハイライト適用済みのメッセージ
         
@@ -571,36 +644,41 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
                     }
         
                     // **ギフトメンバーの送信**
-                    if (isGiftedMembership(message)) {
-                        const giftCount = getGiftedMembershipCount(message);
-                        if (giftCount > 0) {
-                            messageSpan.classList.add('chat-member'); // **緑色**
-                            messageSpan.textContent += ` => ${giftCount}名にギフトメンバーシップが贈られました！`;
-        
-                            liveChatData.stats.members += giftCount;  // ギフト数をそのままメンバー数に加算
-                        }
-                    }
-        
-                    // **ギフトメンバーの受取**
-                    if (isReceivedGiftMembership(message)) {
+                    if (item.snippet.type === "membershipGiftingEvent") {
+                        // メンバーシップギフト情報の取得
+                        const giftCount = item.snippet.membershipGiftingDetails?.giftMembershipsCount || 1; // デフォルト1名
+                        const membershipLevel = item.snippet.membershipGiftingDetails?.giftMembershipsLevelName || "Unknown";
+                    
+                        // 表示用メッセージの作成
                         messageSpan.classList.add('chat-member'); // **緑色**
+                        messageSpan.textContent = ` => ${giftCount}名に「${membershipLevel}」メンバーシップがギフトされました！`;
+                    
+                        // メンバー数を加算
+                        liveChatData.stats.members += giftCount;
+                    }
+
+                    // **ギフトメンバーの受取**
+                    if (item.snippet.type === "giftMembershipReceivedEvent") {
+                        messageSpan.classList.add('chat-giftmember'); // **緑色**
                         messageSpan.textContent += ` => ギフトメンバーシップを受け取りました！`;
                     }
-        
-                    // **通常のメンバー加入**
-                    if (isNewMember(message)) {
+
+                    // **新規メンバー加入**
+                    if (item.snippet.type === "newSponsorEvent" && 
+                        (item.snippet.newSponsorDetails?.isUpgrade === false || item.snippet.newSponsorDetails?.isUpgrade === undefined)) {
+
                         messageSpan.classList.add('chat-member'); // **緑色**
-                        messageSpan.textContent += ` => 新規メンバーシップ加入！`;
+                        messageSpan.textContent += ` => 新規メンバーシップ加入！（${item.snippet.newSponsorDetails.memberLevelName}）`;
                         liveChatData.stats.members++; // メンバーカウント
                     }
 
                     // **メンバーシップのアップグレード**
-                    if (isUpgradedMembership(message)) {
+                    if (item.snippet.type === "newSponsorEvent" && item.snippet.newSponsorDetails?.isUpgrade === true) {
                         messageSpan.classList.add('chat-member'); // **緑色**
-                        messageSpan.textContent += ` => メンバーシップアップグレード！`;
+                        messageSpan.textContent += ` => メンバーシップアップグレード！（${item.snippet.newSponsorDetails.memberLevelName}）`;
                         liveChatData.stats.members++; // メンバーカウント
                     }
-        
+
                     // **名前とメッセージを追加**
                     chatMessageDiv.appendChild(authorSpan);
                     chatMessageDiv.appendChild(messageSpan);
@@ -626,39 +704,12 @@ async function fetchLiveChat(apiKey, liveChatId, isInitialLoad = false) {
         }
     } 
     catch (error) {
-        console.error("ライブチャット取得中にエラー:", error);
+        if (!error.reason) {
+            error.reason = "liveChatFetchError";
+            error.details = { liveChatId, url };
+        }
+        throw error;
     }
-}
-
-// ギフトメンバーを贈ったメッセージの検出
-function isGiftedMembership(message) {
-    return message.includes("gifted") &&
-           (message.includes("memberships") || message.includes("membership")) &&
-           !message.includes("was gifted");
-}
-
-// ギフトの受取人メッセージの検出
-function isReceivedGiftMembership(message) {
-    return message.includes("was gifted") && message.includes("membership");
-}
-
-// 新規メンバシップ加入のメッセージ（ギフト以外）
-function isNewMember(message) {
-    return message.includes("just became a member!");
-}
-
-// メンバーシップのアップグレードメッセージ
-function isUpgradedMembership(message) {
-    return message.includes("just upgraded their membership!");
-}
-
-// ギフトメンバーの人数を取得（デフォルト1人）
-function getGiftedMembershipCount(message) {
-    const match = message.match(/gifted (\d+)/);
-    if (match && match[1]) {
-        return parseInt(match[1], 10); // 数値に変換
-    }
-    return 1; // デフォルトで1名
 }
 
 // チャットの行数を制限
@@ -729,27 +780,58 @@ async function startPolling(apiKey, videoId) {
 
     const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30;
 
-    // メモリをクリア
-    fetchedMessageIds.clear(); 
-    fetchedSuperChats.clear();
-    fetchedSuperStickers.clear();
-    
-    // ライブチャットIDを取得
-    const liveChatId = await getLiveChatId(apiKey, videoId);
-    if (!liveChatId) {
-        showNotification("ライブチャットIDが取得できませんでした", "error");
-        return;
-    }
+    try {
+        // メモリをクリア
+        fetchedMessageIds.clear(); 
+        fetchedSuperChats.clear();
+        fetchedSuperStickers.clear();
+        
+        // ライブチャットIDを取得
+        const liveChatId = await getLiveChatId(apiKey, videoId);
+        if (!liveChatId) {
+            showNotification("ライブチャットIDが取得できませんでした", "error");
+            return;
+        }
 
-    // **ポーリング開始 & 初回取得を統合**
-    liveChatPolling = setInterval(async () => {
+        // **ポーリング開始 & 初回取得を統合**
+        liveChatPolling = setInterval(async () => {
+            try {
+                await fetchLiveChat(apiKey, liveChatId, false);
+                await fetchVideoDetails(apiKey, videoId);
+            } catch (error) {
+                console.warn("ポーリング中にエラー:", error);
+                // ポーリングは継続
+            }
+        }, pollingInterval * 1000);
+    
         await fetchLiveChat(apiKey, liveChatId, false);
         await fetchVideoDetails(apiKey, videoId);
-    }, pollingInterval * 1000);
-  
-    // 初回のチャット取得
-    await fetchLiveChat(apiKey, liveChatId, false);
-    await fetchVideoDetails(apiKey, videoId);
+
+    } catch (error) {
+        // 起動直後のタイミングでエラーがでたら即停止する
+        if (!error.reason) {
+            error.reason = "pollingStartError";
+            error.details = { apiKey, videoId };
+        }
+
+        handleAPIError(error);
+
+        clearInterval(liveChatPolling); // エラー時にポーリングを停止
+        liveChatPolling = null;
+    
+        resetWordHistory(); // ユーザー履歴をリセット
+    
+        // 点滅効果の削除
+        document.querySelector('.status').classList.remove('executing');
+    
+        // ステータスをリセット
+        statusDiv.textContent = ''; 
+    
+        showNotification("停止しました！");
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        disableInputs(false);
+    }
 }
 
 // 開始ボタンクリックイベント
@@ -824,8 +906,7 @@ startBtn.addEventListener('click', async () => {
             disableInputs(false);
         }      
     } catch (error){
-        console.error("エラーが発生しました:", error);
-        showNotification("開始処理中にエラーが発生しました。", "error");
+        handleAPIError(error);
     } finally {
         isPollingActive = false; // フラグをリセット
         if (!pollingStarted) {
@@ -1053,6 +1134,33 @@ function renderExchangeRates(ascending = true) {
         `;
         tableBody.appendChild(row);
     });
+}
+
+// APIエラーの共通ハンドリング
+function handleAPIError(error) {
+    let reason = error?.reason || "unknown"; // reasonが明示的に設定されていれば使用
+    let message = error.message || "不明なエラーが発生しました。";
+    let details = error.details || null; // detailsがない場合はnullを設定
+
+    // ネストされたresponseエラーがある場合を処理
+    if (error?.response?.error) {
+        reason = error.response.error.errors?.[0]?.reason || reason;
+        message = error.response.error.message || message;
+    }
+
+    // エラー詳細をコンソールに出力
+    if (details) {
+        try {
+            console.error(`APIエラー: ${message} (理由: ${reason})`, JSON.stringify(details, null, 2));
+        } catch (serializationError) {
+            console.error(`APIエラー: ${message} (理由: ${reason})`, details);
+        }
+    } else {
+        console.error(`APIエラー: ${message} (理由: ${reason})`);
+    }
+
+    // ユーザーへの通知を表示
+    showNotification(`APIエラー: ${message} (理由: ${reason})`, "error");
 }
 
 // ページロード時に設定を適用し、イベントリスナーを設定

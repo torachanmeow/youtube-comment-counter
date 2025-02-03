@@ -352,12 +352,16 @@ body {
 }
 
 .chat-member {
-    color: #28a745; /* 緑色 */
+    color: #1e7e34; /* 深緑色 */
     font-weight: bold; /* 太字 */
 }
 
+.chat-giftmember {
+    color: #28a745; /* 緑色 */
+}
+
 .chat-supersticker {
-    color: #dc3545; /* 赤色 */
+    color: #ff5733; /* オレンジ系 */
     font-weight: bold; /* 太字 */
 }
 
