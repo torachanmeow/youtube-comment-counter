@@ -195,7 +195,7 @@ function disableInputs(disable) {
 
 // 集計結果を更新して表示
 function updateStatsDisplay(stats) {
-   // 既存の集計結果表示を更新
+    // 既存の集計結果表示を更新
     document.getElementById('superChatAmount').textContent = `¥${stats.superChats.toLocaleString()}`;
     document.getElementById('superStickerAmount').textContent = `¥${stats.superStickers.toLocaleString()}`;
     document.getElementById('newMembers').textContent = stats.members;
@@ -414,7 +414,7 @@ async function getLiveChatId(apiKey, videoId) {
         if (!data || !data.items || data.items.length === 0) {
             const error = new Error("動画情報が取得できません。動画IDが無効です。");
             error.reason = "invalidVideoId"; // エラー種別を追加
-            error.details = { videoId, apiKey }; // デバッグ用の詳細情報
+            error.details = { videoId }; // デバッグ用の詳細情報
             throw error;
         }
 
@@ -422,7 +422,7 @@ async function getLiveChatId(apiKey, videoId) {
         if (!liveChatId) {
             const error = new Error("ライブチャットが無効または存在しない可能性があります。");
             error.reason = "noLiveChat"; // エラー種別を追加
-            error.details = { videoId, apiKey }; // デバッグ用の詳細情報
+            error.details = { videoId }; // デバッグ用の詳細情報
             throw error;
         }
 
@@ -431,15 +431,16 @@ async function getLiveChatId(apiKey, videoId) {
         if (!error.reason) {
             // ネットワークエラーやその他の不明なエラーの場合にデフォルトの情報を付加
             error.reason = "unknown";
-            error.details = { url, videoId, apiKey };
+            error.details = { url, videoId };
         }
         throw error;
     }
 }
 
 // 動画情報を取得
-async function getVideoDetails(apiKey, videoId) {
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${apiKey}`;
+async function getVideoDetails(apiKey, videoId, fetchSnippet = false) {
+    const part = fetchSnippet ? "snippet,statistics" : "statistics"; // 必要に応じて取得
+    const url = `https://www.googleapis.com/youtube/v3/videos?part=${part}&id=${videoId}&key=${apiKey}`;
     try {
         const data = await fetchYouTubeAPI(url);
 
@@ -451,9 +452,9 @@ async function getVideoDetails(apiKey, videoId) {
         }
 
         return {
-            title: data.items[0].snippet.title,
-            publishedAt: data.items[0].snippet.publishedAt,
-            channelTitle: data.items[0].snippet.channelTitle,
+            title: fetchSnippet ? data.items[0].snippet.title : null,
+            channelTitle: fetchSnippet ? data.items[0].snippet.channelTitle : null,
+            publishedAt: fetchSnippet ? data.items[0].snippet.publishedAt : null,
             likeCount: parseInt(data.items[0].statistics.likeCount || "0", 10),
         };
     } catch (error) {
@@ -466,14 +467,22 @@ async function getVideoDetails(apiKey, videoId) {
 }
 
 // 動画情報を定期的に取得
-async function fetchVideoDetails(apiKey, videoId) {
+async function fetchVideoDetails(apiKey, videoId, isInitialLoad = false) {
     try {
-        const videoDetails = await getVideoDetails(apiKey, videoId);
+        const videoDetails = await getVideoDetails(apiKey, videoId, isInitialLoad);
+        
         if (videoDetails) {
-            liveChatData.videoDetails = videoDetails; // 動画情報を更新
-            liveChatData.stats.likes = videoDetails.likeCount || 0; // 高評価数を更新
-            updateStatsDisplay(liveChatData.stats); // 統計データを表示に反映
-            displayVideoDetails(videoDetails); // 整形して動画情報を表示
+            if (isInitialLoad) {
+                // 初回ロード時にタイトルやチャンネル名などを更新
+                liveChatData = initializeLiveChatData();
+                liveChatData.videoDetails = videoDetails;
+                liveChatData.stats.likes = videoDetails.likeCount || 0;
+                displayVideoDetails(videoDetails); // 初回のみ詳細表示
+            }
+
+            // 高評価数を常に更新
+            liveChatData.stats.likes = videoDetails.likeCount || 0;
+            updateStatsDisplay(liveChatData.stats);
         }
     } catch (error) {
         throw error;
@@ -505,12 +514,6 @@ function displayVideoDetails(details) {
     publishedAtElement.className = 'detail-item';
     publishedAtElement.innerHTML = `<strong>公開日:</strong> ${new Date(details.publishedAt).toLocaleString()}`;
     videoDetailsContainer.appendChild(publishedAtElement);
-
-    // 高評価数
-    const likeCountElement = document.createElement('div');
-    likeCountElement.className = 'detail-item';
-    likeCountElement.innerHTML = `<strong>高評価:</strong> ${details.likeCount.toLocaleString()}`;
-    videoDetailsContainer.appendChild(likeCountElement);
 
     // 表示エリアに追加
     videoDetailsDiv.appendChild(videoDetailsContainer);
@@ -781,10 +784,21 @@ async function startPolling(apiKey, videoId) {
     const pollingInterval = parseInt(pollingIntervalInput.value, 10) || 30;
 
     try {
+        // 集計結果、ライブチャット、動画情報をクリア
+        liveChatData = initializeLiveChatData(); // データを初期化
+        videoDetailsDiv.innerHTML = ''; // 動画情報をクリア
+        liveChatDiv.textContent = ''; // チャット内容をクリア
+        wordCountsContainer.innerHTML = ''; // 特定ワードカウントをクリア
+        updateStatsDisplay(liveChatData.stats); // 集計結果をリセット
+        statusDiv.textContent = ''; // ステータスをリセット
+        lastFetchTimeDiv.textContent = '00:00:00'; // 最新取得時間をリセット
+
         // メモリをクリア
         fetchedMessageIds.clear(); 
         fetchedSuperChats.clear();
         fetchedSuperStickers.clear();
+
+        disableInputs(true);
         
         // ライブチャットIDを取得
         const liveChatId = await getLiveChatId(apiKey, videoId);
@@ -793,45 +807,59 @@ async function startPolling(apiKey, videoId) {
             return;
         }
 
+        // 初回データ取得
+        await fetchVideoDetails(apiKey, videoId, true);
+        await fetchLiveChat(apiKey, liveChatId, true);
+
+        // 点滅効果の付与
+        document.querySelector('.status').classList.add('executing');
+
+        // ステータス表示を更新
+        statusDiv.textContent = 'ライブチャット取得中...';
+
+        showNotification("開始しました！");
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
         // **ポーリング開始 & 初回取得を統合**
         liveChatPolling = setInterval(async () => {
             try {
+                await fetchVideoDetails(apiKey, videoId, false);
                 await fetchLiveChat(apiKey, liveChatId, false);
-                await fetchVideoDetails(apiKey, videoId);
             } catch (error) {
-                console.warn("ポーリング中にエラー:", error);
-                // ポーリングは継続
+                // ポーリング中にエラーが発生した場合の処理
+                if (error.reason === "liveChatEnded" || error.reason === "invalidVideoId") {
+                    showNotification("ライブ配信が終了しました。", "error");
+                    stopPolling(); // ポーリングを停止
+                } else {
+                    console.warn("ポーリング中にエラー:", error);
+                }
             }
         }, pollingInterval * 1000);
-    
-        await fetchLiveChat(apiKey, liveChatId, false);
-        await fetchVideoDetails(apiKey, videoId);
 
     } catch (error) {
-        // 起動直後のタイミングでエラーがでたら即停止する
-        if (!error.reason) {
-            error.reason = "pollingStartError";
-            error.details = { apiKey, videoId };
-        }
-
         handleAPIError(error);
-
-        clearInterval(liveChatPolling); // エラー時にポーリングを停止
-        liveChatPolling = null;
-    
-        resetWordHistory(); // ユーザー履歴をリセット
-    
-        // 点滅効果の削除
-        document.querySelector('.status').classList.remove('executing');
-    
-        // ステータスをリセット
-        statusDiv.textContent = ''; 
-    
-        showNotification("停止しました！");
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-        disableInputs(false);
+        stopPolling();
     }
+}
+
+// 停止処理を関数化
+function stopPolling() {
+    clearInterval(liveChatPolling); // ポーリングを停止
+    liveChatPolling = null;
+
+    resetWordHistory(); // ユーザー履歴をリセット
+
+    // 点滅効果の削除
+    document.querySelector('.status').classList.remove('executing');
+
+    // ステータスをリセット
+    statusDiv.textContent = '';
+
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    disableInputs(false);
 }
 
 // 開始ボタンクリックイベント
@@ -860,61 +888,14 @@ startBtn.addEventListener('click', async () => {
             return;
         }
 
-        // 集計結果、ライブチャット、動画情報をクリア
-        liveChatData = initializeLiveChatData(); // データを初期化
-        videoDetailsDiv.innerHTML = ''; // 動画情報をクリア
-        liveChatDiv.textContent = ''; // チャット内容をクリア
-        wordCountsContainer.innerHTML = ''; // 特定ワードカウントをクリア
-        updateStatsDisplay(liveChatData.stats); // 集計結果をリセット
-        statusDiv.textContent = ''; // ステータスをリセット
-        lastFetchTimeDiv.textContent = '00:00:00'; // 最新取得時間をリセット
+        // ライブチャットと動画情報のポーリングを開始（初回リクエストをここで処理）
+        await startPolling(apiKey, videoId);
 
-        disableInputs(true);
-
-        const liveChatId = await getLiveChatId(apiKey, videoId);
-        const videoDetails = await getVideoDetails(apiKey, videoId);
-
-        if (liveChatId && videoDetails) {
-            liveChatData = initializeLiveChatData();
-            liveChatData.videoDetails = videoDetails;
-            liveChatData.stats.likes = videoDetails.likeCount || 0;
-
-            // 動画情報を整形して表示
-            displayVideoDetails(videoDetails);
-
-            // 点滅効果の付与
-            document.querySelector('.status').classList.add('executing');
-
-            // ステータス表示を更新
-            statusDiv.textContent = 'ライブチャット取得中...';
-
-            showNotification("開始しました！");
-
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-
-            // 初回のライブチャット取得
-            await fetchLiveChat(apiKey, liveChatId, true);
-
-            // ライブチャットと動画情報のポーリングを開始
-            startPolling(apiKey, videoId);
-
-            pollingStarted = true; // ポーリングが正常に開始されたことを記録
-        } else {
-            // alert('ライブチャットIDまたは動画情報が取得できませんでした。');
-            showNotification("ライブチャットIDまたは動画情報が取得できませんでした。", "error");
-            disableInputs(false);
-        }      
+        pollingStarted = true; // ポーリングが正常に開始されたことを記録 
     } catch (error){
         handleAPIError(error);
     } finally {
         isPollingActive = false; // フラグをリセット
-        if (!pollingStarted) {
-            // ポーリングが開始できなかった場合に元の状態に戻す
-            stopBtn.disabled = true;
-            startBtn.disabled = false;
-            disableInputs(false);
-        }
     }
 });
 
