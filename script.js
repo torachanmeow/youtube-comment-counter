@@ -129,24 +129,22 @@ const wordInputs = [
 const LiveChatManager = {
     userWordHistory: {}, // ユーザーごとの発言履歴を管理
 
-    data: {
-        stats: initializeStats(), // 集計データ
-        fetchedMessageIds: new Set(), // メッセージIDの重複チェック
-        fetchedSuperChats: new Set(), // スーパーチャットの重複チェック
-        fetchedSuperStickers: new Set(), // スーパーステッカーの重複チェック
-        comments: [], // 取得したチャットのリスト
-        videoDetails: {}, // 動画の詳細情報
-    },
+    data: {}, 
 
-    /** 集計データを初期化 */
+    resetData() {
+        this.data = {
+            stats: initializeStats(), // 集計データ
+            messageIds: new Set(), // 取得済みメッセージIDのリスト（重複チェック）
+            superChatIds: new Set(), // 取得済みスーパーチャットのリスト（重複チェック）
+            superStickerIds: new Set(), // 取得済みスーパーステッカーのリスト（重複チェック）
+            chatLogs: [], // 取得したチャットのリスト
+            videoDetails: {} // 動画の詳細情報
+        };
+        this.userWordHistory = {}; // ユーザー発言履歴もリセット
+    },
+    
     initializeData() {
-        this.userWordHistory = {};
-        this.data.stats = initializeStats();
-        this.data.fetchedMessageIds.clear();
-        this.data.fetchedSuperChats.clear();
-        this.data.fetchedSuperStickers.clear();
-        this.data.comments = [];
-        this.data.videoDetails = {};
+        this.resetData();
     }
 };
 
@@ -464,19 +462,18 @@ function processChatMessage(item, isInitialLoad) {
     if (!item.snippet.hasDisplayContent) return;
 
     const messageId = item.id;
-    if (LiveChatManager.data.fetchedMessageIds.has(messageId)) return;
-    
-    LiveChatManager.data.fetchedMessageIds.add(messageId);
-    if (LiveChatManager.data.fetchedMessageIds.size > MAX_MESSAGE_IDS) {
-        LiveChatManager.data.fetchedMessageIds.delete(LiveChatManager.data.fetchedMessageIds.values().next().value);
+
+    // メッセージIDの重複チェック
+    if (!isInitialLoad && LiveChatManager.data.messageIds.has(messageId)) return;  
+    LiveChatManager.data.messageIds.add(messageId);
+
+    if (LiveChatManager.data.messageIds.size > MAX_MESSAGE_IDS) {
+        LiveChatManager.data.messageIds.delete(LiveChatManager.data.messageIds.values().next().value);
     }
 
     const authorId = item.authorDetails.channelId;
     const authorName = item.authorDetails.displayName;
     const publishedAt = item.snippet.publishedAt; 
-
-    if (!isInitialLoad && LiveChatManager.data.fetchedMessageIds.has(messageId)) return;
-    LiveChatManager.data.fetchedMessageIds.add(messageId);
 
     // **チャットメッセージの表示エリアを作成**
     const chatMessageDiv = document.createElement('div');
@@ -520,9 +517,8 @@ function processChatMessage(item, isInitialLoad) {
     liveChatDiv.appendChild(chatMessageDiv);
 
     // **コメントデータを保存**
-    LiveChatManager.data.comments.push({ id: messageId, message: `[${authorName}] ${message}` });
+    LiveChatManager.data.chatLogs.push({ id: messageId, message: `[${authorName}] ${message}` });
 }
-
 
 // **単語カウントを処理**
 function countWords(authorId, message, specialWordsWithWeights) {
@@ -593,11 +589,11 @@ function processSuperChat(item, messageSpan, authorName, publishedAt) {
     const jpyAmount = convertToJPY(amount, currency);
     const superChatKey = `${authorName}_${amount}_${currency}_${publishedAt}`;
 
-    if (LiveChatManager.data.fetchedSuperChats.has(superChatKey)) return;
-    LiveChatManager.data.fetchedSuperChats.add(superChatKey);
+    if (LiveChatManager.data.superChatIds.has(superChatKey)) return;
+    LiveChatManager.data.superChatIds.add(superChatKey);
 
-    if (LiveChatManager.data.fetchedSuperChats.size > MAX_MESSAGE_IDS) {
-        LiveChatManager.data.fetchedSuperChats.delete([...LiveChatManager.data.fetchedSuperChats][0]);
+    if (LiveChatManager.data.superChatIds.size > MAX_MESSAGE_IDS) {
+        LiveChatManager.data.superChatIds.delete([...LiveChatManager.data.superChatIds][0]);
     }
 
     if (jpyAmount !== null) {
@@ -616,11 +612,11 @@ function processSuperSticker(item, messageSpan, authorName, publishedAt) {
     const jpyAmount = convertToJPY(amount, currency);
     const superStickerKey = `${authorName}_${amount}_${currency}_${publishedAt}`;
 
-    if (LiveChatManager.data.fetchedSuperStickers.has(superStickerKey)) return;
-    LiveChatManager.data.fetchedSuperStickers.add(superStickerKey);
+    if (LiveChatManager.data.superStickerIds.has(superStickerKey)) return;
+    LiveChatManager.data.superStickerIds.add(superStickerKey);
 
-    if (LiveChatManager.data.fetchedSuperStickers.size > MAX_MESSAGE_IDS) {
-        LiveChatManager.data.fetchedSuperStickers.delete([...LiveChatManager.data.fetchedSuperStickers][0]);
+    if (LiveChatManager.data.superStickerIds.size > MAX_MESSAGE_IDS) {
+        LiveChatManager.data.superStickerIds.delete([...LiveChatManager.data.superStickerIds][0]);
     }
 
     if (jpyAmount !== null) {
@@ -670,14 +666,14 @@ function manageChatMemory() {
     }
 
     // **取得済みメッセージIDのメモリ管理**
-    if (LiveChatManager.data.fetchedMessageIds.size > MAX_MESSAGE_IDS) {
-        const oldestIds = Array.from(LiveChatManager.data.fetchedMessageIds).slice(0, LiveChatManager.data.fetchedMessageIds.size - MAX_MESSAGE_IDS);
-        oldestIds.forEach(id => LiveChatManager.data.fetchedMessageIds.delete(id)); // 古いIDを削除
+    if (LiveChatManager.data.messageIds.size > MAX_MESSAGE_IDS) {
+        const oldestIds = Array.from(LiveChatManager.data.messageIds).slice(0, LiveChatManager.data.messageIds.size - MAX_MESSAGE_IDS);
+        oldestIds.forEach(id => LiveChatManager.data.messageIds.delete(id)); // 古いIDを削除
     }
 
     // **チャット履歴のメモリ管理**
-    if (LiveChatManager.data.comments.length > MAX_MESSAGE_IDS) {
-        LiveChatManager.data.comments.splice(0, LiveChatManager.data.comments.length - MAX_MESSAGE_IDS);
+    if (LiveChatManager.data.chatLogs.length > MAX_MESSAGE_IDS) {
+        LiveChatManager.data.chatLogs.splice(0, LiveChatManager.data.chatLogs.length - MAX_MESSAGE_IDS);
     }
 
     // **ユーザー発言履歴のメモリ管理**
