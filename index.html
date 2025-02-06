@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Live Chat 集計システム</title>
+    <title>YouTube Live Chat 自動集計システム</title>
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
 </head>
 <body>
     <div class="container">
-        <h1>YouTube Live Chat 集計システム</h1>
+        <h1>YouTube Live Chat 自動集計システム</h1>
 
-        <!-- API設定 -->
         <div class="settings-container">
             <div class="settings-item">
                 <label class="settings-label" for="apiKey" data-save>APIキー</label>
@@ -27,7 +26,6 @@
             </div>
         </div>
 
-        <!-- 集計項目設定 -->
         <div class="settings-container">
             <div class="settings-item">
                 <label class="settings-label" for="likeWeight">高評価</label>
@@ -73,7 +71,6 @@
             </div>
         </div>
 
-        <!-- リクエスト処理 -->
         <div class="settings-half-container">          
             <div class="settings-item">
                 <label class="settings-label" for="videoId">動画ID</label>
@@ -86,7 +83,6 @@
             </div>
         </div>
 
-        <!-- ボタン -->
         <div class="button-group">
             <button id="startBtn" class="btn">開始</button>
             <button id="stopBtn" class="btn" disabled>停止</button>
@@ -94,15 +90,12 @@
 
         <hr />
 
-        <!-- ステータス表示 -->
         <div id="status" class="status"></div>
 
-        <!-- 最新取得 -->
         <div class="latest-info">
-            最新取得：<span id="lastFetchTime">00:00:00</span>
+            最新値：<span id="lastFetchTime">00:00:00</span>
         </div>
 
-        <!-- 合計ポイント -->
         <div class="totalPoints-container">
             <div class="totalPoints-item">
                 <span class="totalPoints-label">合計</span>
@@ -112,59 +105,54 @@
 
         <hr />
 
-        <!-- 集計結果 -->
-        <div id="statsDisplay" class="stats-container">
-            <h2>取得結果</h2>
-            <div class="stat-item">
-                <span class="stat-label">高評価</span>
-                <span class="stat-value" id="likeCount">0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">スーパーチャット</span>
-                <span class="stat-value" id="superChatAmount">¥0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">スーパーステッカー</span>
-                <span class="stat-value" id="superStickerAmount">¥0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">メンバーシップ</span>
-                <span class="stat-value" id="newMembers">0</span>
-            </div>
-            <!-- 特定ワードの出現回数 -->
-            <div id="keyWordContainer">
-                <!-- 特定ワードが動的に追加されます -->
-            </div>
-        </div>
-
-        <!-- ポイント換算 -->
         <div class="points-container">
-            <h2>ポイント換算</h2>
+            <h2>Points</h2>
             <div class="points-item">
-                <span class="points-label">高評価</span>
+                <span class="points-label">高評価&#x1FA77;</span>
                 <span class="points-value" id="likePoints">0</span>
             </div>
             <div class="points-item">
-                <span class="points-label">スーパーチャット</span>
+                <span class="points-label">スーパーチャット&#x1F308;</span>
                 <span class="points-value" id="superChatPoints">0</span>
             </div>
             <div class="points-item">
-                <span class="points-label">スーパーステッカー</span>
+                <span class="points-label">スーパーステッカー&#x1F431;</span>
                 <span class="points-value" id="superStickerPoints">0</span>
             </div>
             <div class="points-item">
-                <span class="points-label">メンバーシップ</span>
+                <span class="points-label">メンバーシップ&#x1F940;</span>
                 <span class="points-value" id="memberPoints">0</span>
             </div>
-            <!-- 特定ワードポイント -->
             <div id="wordPointsContainer">
-                <!-- 特定ワードが動的に追加されます -->
+                <!-- 動的に追加 -->
+            </div>
+        </div>
+
+        <div id="statsDisplay" class="stats-container">
+            <h2>Counts</h2>
+            <div class="stat-item">
+                <span class="stat-label">高評価&#x1FA77;</span>
+                <span class="stat-value" id="likeCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">スーパーチャット&#x1F308;</span>
+                <span class="stat-value" id="superChatAmount">¥0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">スーパーステッカー&#x1F431;</span>
+                <span class="stat-value" id="superStickerAmount">¥0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">メンバーシップ&#x1F940;</span>
+                <span class="stat-value" id="newMembers">0</span>
+            </div>
+            <div id="keyWordContainer">
+                <!-- 動的に追加 -->
             </div>
         </div>
 
         <hr />
 
-        <!-- ライブチャット表示 -->
         <div class="line-control">
             <h2>ライブチャット</h2>
             <button id="copyChatBtn" class="copy-btn">Copy</button>
@@ -173,7 +161,6 @@
             <pre id="liveChat" class="chat"></pre>
         </div>
 
-        <!-- 動画情報表示 -->
         <div class="line-control">
             <h2>動画情報</h2>
             <button id="copyDetailsBtn" class="copy-btn">Copy</button>
@@ -199,7 +186,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- 動的にリストを生成 -->
+                        <!-- 動的に追加 -->
                     </tbody>
                 </table>
             </div>

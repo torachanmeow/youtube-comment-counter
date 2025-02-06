@@ -3,17 +3,18 @@
     max-width: 650px;
     margin: auto;
     padding: 20px 40px;
-    background-color: #F8F9FA; /* 落ち着いたグレー */
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* 控えめな影 */
+    background-color: #F8F9FA;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* タイトル */
 h1 {
     text-align: left;
     margin: 5px 0 10px 5px;
-    font-size: 18px;
-    color: #495057; /* ネイビーグレー */
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: #495057;
     font-family: 'Poppins', 'Arial', sans-serif;
 }
 
@@ -22,18 +23,18 @@ body {
     font-family: 'Poppins', 'Arial', sans-serif;
     margin: 0;
     padding: 20px;
-    background-color: #F8F9FA; /* グレー系の背景 */
-    color: #343A40; /* よりクールな印象のダークグレー */
+    background-color: #F8F9FA;
+    color: #343A40;
     line-height: 1.6;
 }
 
 /* ボタンデザイン */
 .button-group {
     display: flex;
-    justify-content: left; /* 中央寄せ */
+    justify-content: left;
     align-items: center;
-    gap: 40px; /* ボタン同士の間隔を広げる */
-    width: 100%; /* 親要素の幅いっぱいに広げる */
+    gap: 40px;
+    width: 100%;
     margin-bottom: 20px;
 }
 
@@ -65,7 +66,7 @@ body {
 .toggle-btn:hover,
 .copy-btn:hover {
     background-color: #0056b3;
-    transform: scale(1.05); /* 少し大きくする */
+    transform: scale(1.05);
 }
 
 /* 無効化されたボタン */
@@ -90,10 +91,10 @@ body {
 
 .settings-half-container {
     display: flex;
-    flex-direction: column; /* 縦並び */
-    padding: 4px 10px; /* 内側の余白 */
+    flex-direction: column;
+    padding: 4px 10px;
     width: 80%;
-    box-sizing: border-box; /* パディングを含めた幅の計算 */
+    box-sizing: border-box;
     margin-bottom: 10px;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -109,7 +110,6 @@ body {
 
 .settings-label {
     flex: 0.25;
-    font-weight: bold;
     color: #495057;
 }
 
@@ -121,11 +121,10 @@ body {
 
 .settings-symbol {
     flex: 0.05;
-    font-weight: bold;
     color: #495057;
-    text-align: center; /* 中央揃え */
+    text-align: center;
     display: inline-block;
-    min-width: 20px; /* 幅を固定してレイアウト崩れ防止 */
+    min-width: 20px;
 }
 
 .settings-weight,
@@ -139,22 +138,13 @@ body {
 .settings-item input[type="password"],
 .settings-item input[type="number"] {
     padding: 4px;
-    font-size: 16px; /* 少し大きくして見やすく */
-    font-weight: bold; /* 太字で強調 */
+    font-size: 16px;
     font-family: 'Poppins', 'Arial', sans-serif;
-    border: 1px solid #adb5bd; /* クールなグレー */
-    border-radius: 6px; /* 丸みを少し抑える */
+    border: 1px solid #adb5bd;
+    border-radius: 6px;
     background-color: #ffffff;
     transition: border-color 0.3s, box-shadow 0.3s;
-    color: #222222; /* 文字色を少し濃く */
-}
-
-/* フォーカス時のスタイル（視認性アップ） */
-.settings-item input[type="text"]:focus,
-.settings-item input[type="number"]:focus {
-    border-color: #007bff; /* 強調カラー */
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    outline: none;
+    color: #222222;
 }
 
 /* 数値入力は右寄せ */
@@ -164,26 +154,24 @@ body {
 
 /* 無効化された入力 */
 .settings-item input[disabled] {
-    background-color: #f1f3f5; /* 柔らかいグレー */
+    background-color: #f1f3f5;
     color: #6c757d;
 }
 
 /* 最新のコメント取得時間 */
 .latest-info {
-    font-size: 16px; /* 少し大きめ */
-    color: #495057; /* 目に優しいダークグレー */
-    font-weight: bold; /* 文字を少し強調 */
-    text-align: right; /* 右寄せ */
-    padding: 8px 15px; /* 余白を調整 */
-    display: flex; /* フレックスボックスを使用 */
-    justify-content: flex-end; /* 右寄せ */
-    align-items: center; /* 垂直方向の中央揃え */
+    font-size: 14px;
+    color: #495057;
+    text-align: right;
+    padding: 8px 15px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 #lastFetchTime {
-    font-family: "Courier New", monospace; /* 等幅フォントで見やすく */
-    font-size: 18px; /* 数字を見やすく */
-    color: #d63384; /* 目立つ色 */
+    letter-spacing: 6px;
+    color: #d63384;
 }
 
 /* 合計ポイント */
@@ -191,7 +179,7 @@ body {
     display: flex;
     flex-direction: column;
     padding: 5px 15px 5px 15px;
-    border-radius: 8px;
+    border-radius: 4px;
     margin-bottom: 10px;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -202,87 +190,44 @@ body {
     display: flex;
     font-size: 30px;
     justify-content: space-between;
-    padding: 8px 0;
+    padding: 8px;
 }
 
 .totalPoints-label {
-    font-weight: bold;
+    letter-spacing: 10px;
     color: #495057;
 }
 
 #totalPointsDisplay {
-    display: flex;
-    flex-direction: column;
     font-size: 30px;
-    font-weight: bold;
-    color: #495057;
-    letter-spacing: 10px; /* 文字間隔を調整 */
-}
-
-/* 集計結果 */
-.stats-container {
+    letter-spacing: 12px;
     display: flex;
     flex-direction: column;
-    background-color: #E3F2FD; /* 薄い青 */
-    padding: 5px 15px 5px 15px;
-    border: 1px solid #BBDEFB; /* さらに淡いブルー */
-    border-radius: 8px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 4px rgba(100, 149, 237, 0.2); /* ふんわりした影 */
-}
-
-.stats-container h2 {
-    font-size: 12px;
-    color: #1565C0; /* 落ち着いたブルー */
-    margin-bottom: 10px;
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px solid #BBDEFB; /* 薄いボーダー */
-}
-
-.stat-item:last-child {
-    border-bottom: none;
-}
-
-.stat-label {
-    font-weight: bold;
-    color: #1565C0; /* ダークブルー */
-}
-
-.stat-value {
-    font-size: 16px;
-    font-weight: bold;
-    color: #0D47A1; /* 深いブルーで強調 */
-    letter-spacing: 10px; /* 文字間隔を調整 */
 }
 
 /* ポイント換算 */
 .points-container {
     display: flex;
     flex-direction: column;
-    background-color: #FDE8EF; /* 優しいピンク */
+    background-color: #FDE8EF;
     padding: 5px 15px 5px 15px;
-    border: 1px solid #F5C6CB; /* 淡いピンクのボーダー */
-    border-radius: 8px;
+    border: 1px solid #F5C6CB;
+    border-radius: 4px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(242, 132, 159, 0.2); /* ほんのりピンクの影 */
+    box-shadow: 0 2px 4px rgba(242, 132, 159, 0.2);
 }
 
 .points-container h2 {
-    font-size: 12px;
-    color: #C2185B; /* 落ち着いたピンク */
-    margin-bottom: 10px;
+    font-size: 12px; 
+    letter-spacing: 6px;
+    color: #C2185B;
 }
 
 .points-item {
     display: flex;
     justify-content: space-between;
     padding: 4px 0;
-    border-bottom: 1px solid #F5C6CB; /* 薄いピンクのボーダー */
+    border-bottom: 1px solid #F5C6CB;
 }
 
 .points-item:last-child {
@@ -290,15 +235,56 @@ body {
 }
 
 .points-label {
-    font-weight: bold;
-    color: #C2185B; /* ダークピンク */
+    font-size: 14px; 
+    letter-spacing: 6px;
+    color: #C2185B;
 }
 
 .points-value {
     font-size: 16px;
-    font-weight: bold;
-    color: #E91E63; /* 鮮やかだけど落ち着いたピンク */
-    letter-spacing: 10px; /* 文字間隔を調整 */
+    letter-spacing: 10px;
+    color: #C2185B;
+}
+
+/* 集計結果 */
+.stats-container {
+    display: flex;
+    flex-direction: column;
+    background-color: #E3F2FD;
+    padding: 5px 15px 5px 15px;
+    border: 1px solid #BBDEFB;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(100, 149, 237, 0.2);
+}
+
+.stats-container h2 {
+    font-size: 12px; 
+    letter-spacing: 6px;
+    color: #1565C0;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #BBDEFB;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-size: 14px; 
+    letter-spacing: 6px;
+    color: #1565C0;
+}
+
+.stat-value {
+    font-size: 16px;
+    letter-spacing: 10px;
+    color: #1565C0;
 }
 
 /* ラインコントロール（タイトル右端にCopyボタン配置） */
@@ -312,7 +298,8 @@ body {
 
 .line-control h2 {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
+    letter-spacing: 10px;
     color: #495057;
 }
 
@@ -338,7 +325,7 @@ body {
 }
 
 .chat-author {
-    font-weight: bold; /* 名前を太字に */
+    font-weight: bold;
     color: #212529;
 }
 
@@ -347,27 +334,27 @@ body {
 }
 
 .chat-superchat {
-    color: #dc3545; /* 赤色 */
-    font-weight: bold; /* 太字 */
+    color: #dc3545;
+    font-weight: bold;
 }
 
 .chat-membership {
-    color: #1e7e34; /* 深緑色 */
-    font-weight: bold; /* 太字 */
+    color: #1e7e34;
+    font-weight: bold;
 }
 
 .chat-membershipgift {
-    color: #28a745; /* 緑色 */
+    color: #28a745;
 }
 
 .chat-supersticker {
-    color: #ff5733; /* オレンジ系 */
-    font-weight: bold; /* 太字 */
+    color: #ff5733;
+    font-weight: bold;
 }
 
 .chat-specialword {
-    color: #007bff; /* 青色 */
-    font-weight: bold; /* 太字 */
+    color: #007bff;
+    font-weight: bold;
 }
 
 /* 動画情報 */
@@ -396,13 +383,13 @@ body {
     border-radius: 5px;
     position: relative;
     transition: all 0.5s ease-in-out;
-    color: transparent; /* 初期状態は文字も透明 */
-    opacity: 0; /* 初期状態は透明 */
+    color: transparent;
+    opacity: 0;
 }
 
 /* 配信中（緑色） */
 .executing {
-    color: #28a745; /* 文字色：緑 */
+    color: #28a745;
     border: 2px solid #28a745;
     border-image: linear-gradient(45deg, #28a745, #34d058, #28a745) 1;
     opacity: 1; /* フェードイン */
@@ -411,10 +398,10 @@ body {
 
 /* 配信終了（赤色） */
 .stopped {
-    color: #d32f2f; /* 文字色：赤 */
+    color: #d32f2f;
     border: 2px solid #d32f2f;
     border-image: linear-gradient(45deg, #d32f2f, #ff6666, #d32f2f) 1;
-    opacity: 1; /* フェードイン */
+    opacity: 1;
 }
 
 /* 点滅アニメーション */
@@ -436,7 +423,7 @@ body {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: #28a745; /* 成功時の緑色 */
+    background-color: #28a745;
     color: white;
     padding: 10px 20px;
     border-radius: 5px;
@@ -448,7 +435,7 @@ body {
 }
 
 .notification.error {
-    background-color: #dc3545; /* 失敗時の赤色 */
+    background-color: #dc3545;
 }
 
 /* 通知のフェードイン・フェードアウトアニメーション */
@@ -505,8 +492,9 @@ body {
 
 /* モーダルのタイトル */
 .exchangeRates-modal-content h2 {
-    font-size: 18px;
-    color: #343A40; /* ダークグレー */
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #495057;
     text-align: center;
     margin-bottom: 15px;
 }
@@ -515,7 +503,7 @@ body {
 .exchangeRates-scrollable {
     max-height: 300px;
     overflow-y: auto;
-    border: 1px solid #CED4DA; /* スモーキーグレー */
+    border: 1px solid #CED4DA;
     border-radius: 6px;
     background-color: #E9ECEF;
     padding: 10px;
@@ -561,7 +549,7 @@ tbody tr:nth-child(even) {
 }
 
 tbody tr:hover {
-    background: #DEE2E6; /* ハイライト */
+    background: #DEE2E6;
     transition: background 0.2s;
 }
 
@@ -578,19 +566,19 @@ tbody tr:hover {
     padding: 0;
     position: sticky; /* スクロールしても固定 */
     top: 0;
-    background: #E9ECEF; /* 背景色を設定し、スクロール時に視認性を確保 */
+    background: #E9ECEF;
     z-index: 100;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* ヘッダー（通貨コード・国名・レート） */
 #exchangeRateTable th {
-    height: 48px; 
+    height: 36px; 
     box-sizing: border-box;
-    font-size: 16px;
+    font-size: 14px;
     padding: 12px;
-    background: #E9ECEF; /* 明るいグレー */
-    color: #495057; /* ダークグレー */
+    background: #E9ECEF;
+    color: #495057;
     text-align: center;
     border-bottom: 2px solid #ADB5BD;
 }
@@ -598,67 +586,41 @@ tbody tr:hover {
 /* 列幅の調整 */
 #exchangeRateTable th:nth-child(1), /* 通貨コード */
 #exchangeRateTable td:nth-child(1) {
+    font-size: 14px;
+    letter-spacing: 4px;
     width: 20%;
 }
 
 #exchangeRateTable th:nth-child(2), /* 国名 */
 #exchangeRateTable td:nth-child(2) {
-    width: 40%; /* 国名列を大きめに */
-    font-size: 16px;
-    font-weight: bold;
-    padding-left: 10px;
+    font-size: 14px;
+    letter-spacing: 4px;
 }
 
 #exchangeRateTable th:nth-child(3), /* レート */
 #exchangeRateTable td:nth-child(3) {
+    font-size: 16px;
     width: 30%;
     text-align: center;
 }
 
-/* レートの入力欄を右詰め・見やすく */
+/* レートの入力欄 */
 #exchangeRateTable input[type="number"] {
     text-align: right;
-    width: 100px; /* コンパクトに調整 */
-    height: 32px; /* 適度な高さ */
-    font-size: 16px; /* 少し大きく */
-    font-weight: bold; /* 太字で視認性向上 */
-    padding-right: 10px; /* 右側の余白を確保 */
-    border: 1px solid #ADB5BD; /* 落ち着いたグレーの枠 */
-    border-radius: 4px; /* 角を少し丸める */
-    background-color: #ffffff; /* 白背景 */
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-
-/* フォーカス時の強調（モーダル以外のスタイルに統一） */
-#exchangeRateTable input[type="number"]:focus {
-    border-color: #6C757D; /* 少し濃いグレー */
-    box-shadow: 0 0 6px rgba(108, 117, 125, 0.4); /* 控えめな影 */
-    outline: none;
-}
-
-/* 数値セル（レート入力欄）を右詰め */
-#exchangeRateTable td:nth-child(3) {
-    text-align: right;
-    font-size: 16px; /* 適度なサイズ */
-    font-weight: bold; /* 見やすく */
+    width: 100px;
+    height: 32px;
+    font-size: 16px;
     padding-right: 10px;
-}
-
-/* 交互の行の背景色 */
-#exchangeRateTable tbody tr:nth-child(even) {
-    background: #F8F9FA; /* 淡いグレー */
-}
-
-/* ホバー時のハイライト */
-#exchangeRateTable tbody tr:hover {
-    background: #DEE2E6; /* やや濃いグレー */
-    transition: background 0.2s;
+    border: 1px solid #ADB5BD;
+    border-radius: 4px;
+    background-color: #ffffff;
+    transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 /* モーダルウィンドウのスクロール領域 */
 .exchangeRates-scrollable {
-    max-height: 350px; /* スクロール可能領域 */
-    overflow-y: auto; /* 縦スクロール有効 */
+    max-height: 400px;
+    overflow-y: auto;
     border: 1px solid #CED4DA;
     border-radius: 6px;
     background-color: #E9ECEF;
@@ -670,7 +632,7 @@ tbody tr:hover {
 /* 為替レート設定モーダルのボタン配置 */
 .exchangeRates-buttons {
     display: flex;
-    justify-content: space-between; /* ボタンを左右に配置 */
+    justify-content: space-between;
     margin-top: 50px;
     width: 100%;
     margin-left: auto;
@@ -682,7 +644,6 @@ tbody tr:hover {
     color: white;
     padding: 10px 20px;
     font-size: 14px;
-    font-weight: bold;
     border: none;
     border-radius: 6px;
     cursor: pointer;
