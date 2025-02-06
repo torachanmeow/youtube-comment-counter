@@ -351,12 +351,12 @@ body {
     font-weight: bold; /* 太字 */
 }
 
-.chat-member {
+.chat-membership {
     color: #1e7e34; /* 深緑色 */
     font-weight: bold; /* 太字 */
 }
 
-.chat-giftmember {
+.chat-membershipgift {
     color: #28a745; /* 緑色 */
 }
 
@@ -365,7 +365,7 @@ body {
     font-weight: bold; /* 太字 */
 }
 
-.chat-highlight {
+.chat-specialword {
     color: #007bff; /* 青色 */
     font-weight: bold; /* 太字 */
 }
@@ -670,13 +670,15 @@ tbody tr:hover {
 /* 為替レート設定モーダルのボタン配置 */
 .exchangeRates-buttons {
     display: flex;
-    justify-content: center;
-    margin-top: 10px;
+    justify-content: space-between; /* ボタンを左右に配置 */
+    margin-top: 50px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* ボタンのスタイル */
 .exchangeRates-btn {
-    background: #007BFF;
     color: white;
     padding: 10px 20px;
     font-size: 14px;
@@ -686,12 +688,25 @@ tbody tr:hover {
     cursor: pointer;
     transition: background 0.3s;
     text-align: center;
-    min-width: 150px;
+    min-width: 100px;
 }
 
-/* ボタンのホバー時 */
-.exchangeRates-btn:hover {
+/* 保存ボタン */
+.exchangeRates-btn:not(.reset) {
+    background: #007BFF;
+}
+
+.exchangeRates-btn:not(.reset):hover {
     background: #0056b3;
+}
+
+/* 初期化ボタン */
+.exchangeRates-btn.reset {
+    background: #28a745;
+}
+
+.exchangeRates-btn.reset:hover {
+    background: #218838;
 }
 
 /* フェードインアニメーション */

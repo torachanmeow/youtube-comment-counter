@@ -14,8 +14,8 @@
         <!-- API設定 -->
         <div class="settings-container">
             <div class="settings-item">
-                <label class="settings-label" for="apiKey">APIキー</label>
-                <input class="settings-word" type="password" id="apiKey" placeholder="APIキーを入力してください" value="">
+                <label class="settings-label" for="apiKey" data-save>APIキー</label>
+                <input class="settings-word" type="password" id="apiKey" placeholder="APIキーを入力してください"  data-save>
                 <span class="settings-symbol"></span>
                 <button class="settings-btn" id="toggleApiKeyBtn">表示</button>
             </div>
@@ -33,43 +33,43 @@
                 <label class="settings-label" for="likeWeight">高評価</label>
                 <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="likeWeight" value="0" min="-100.0" max="100.0" step="0.1">
+                <input class="settings-weight" type="number" id="likeWeight" value="0" min="-100.0" max="100.0" step="0.1"  data-save>
             </div>   
             <div class="settings-item">
                 <label class="settings-label" for="superChatWeight">スーパーチャット</label>
                 <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="superChatWeight" value="0" min="-100.0" max="100.0" step="0.1">
+                <input class="settings-weight" type="number" id="superChatWeight" value="0" min="-100.0" max="100.0" step="0.1" data-save>
             </div>   
             <div class="settings-item">
                 <label class="settings-label" for="superStickerWeight">スーパーステッカー</label>
                 <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="superStickerWeight" value="0" min="-100.0" max="100.0" step="0.1">
+                <input class="settings-weight" type="number" id="superStickerWeight" value="0" min="-100.0" max="100.0" step="0.1" data-save>
             </div>   
             <div class="settings-item">
                 <label class="settings-label" for="word1">メンバーシップ</label>
                 <input class="settings-word" type="text" value="-" disabled> <!-- disabled 属性で無効化 -->
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="memberWeight" value="0" min="-999" max="999" step="1">
+                <input class="settings-weight" type="number" id="memberWeight" value="0" min="-999" max="999" step="1" data-save>
             </div>    
             <div class="settings-item">
                 <label class="settings-label" for="word2">キーワード1</label>
-                <input class="settings-word" type="text" id="word1" value="" placeholder="特定ワード1">
+                <input class="settings-word" type="text" id="word1" value="" placeholder="特定ワード1" data-save>
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="weight1" value="0" min="-100" max="100" step="1">
+                <input class="settings-weight" type="number" id="weight1" value="0" min="-100" max="100" step="1" data-save>
             </div>
             <div class="settings-item">
                 <label class="settings-label" for="word2">キーワード2</label>
-                <input class="settings-word" type="text" id="word2" value="" placeholder="特定ワード2">
+                <input class="settings-word" type="text" id="word2" value="" placeholder="特定ワード2" data-save>
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="weight2" value="0" min="-100" max="100" step="1">
+                <input class="settings-weight" type="number" id="weight2" value="0" min="-100" max="100" step="1" data-save>
             </div>
             <div class="settings-item">
                 <label class="settings-label" for="word3">キーワード3</label>
-                <input class="settings-word" type="text" id="word3" value="" placeholder="特定ワード3">
+                <input class="settings-word" type="text" id="word3" value="" placeholder="特定ワード3" data-save>
                 <span class="settings-symbol">✖️</span>
-                <input class="settings-weight" type="number" id="weight3" value="0" min="-100" max="100" step="1">
+                <input class="settings-weight" type="number" id="weight3" value="0" min="-100" max="100" step="1" data-save>
             </div>
         </div>
 
@@ -77,12 +77,12 @@
         <div class="settings-half-container">          
             <div class="settings-item">
                 <label class="settings-label" for="videoId">動画ID</label>
-                <input class="settings-word" type="text" id="videoId" placeholder="動画IDを入力してください" value="">
+                <input class="settings-word" type="text" id="videoId" placeholder="動画IDを入力してください"  data-save>
             </div>
             <div class="settings-item">
                 <label class="settings-label" for="pollingInterval">リトライ(秒)</label>
                 <span class="settings-symbol"></span>
-                <input class="settings-value" type="number" id="pollingInterval" value="30" min="1" max="999" step="1">
+                <input class="settings-value" type="number" id="pollingInterval" value="30" min="1" max="999" step="1"  data-save>
             </div>
         </div>
 
@@ -132,7 +132,7 @@
                 <span class="stat-value" id="newMembers">0</span>
             </div>
             <!-- 特定ワードの出現回数 -->
-            <div id="wordCountsContainer">
+            <div id="keyWordContainer">
                 <!-- 特定ワードが動的に追加されます -->
             </div>
         </div>
@@ -167,7 +167,7 @@
         <!-- ライブチャット表示 -->
         <div class="line-control">
             <h2>ライブチャット</h2>
-            <button id="copyChatBtn" class="copy-btn" onclick="copyToClipboard('liveChat')">Copy</button>
+            <button id="copyChatBtn" class="copy-btn">Copy</button>
         </div>
         <div class="chat-container">
             <pre id="liveChat" class="chat"></pre>
@@ -176,19 +176,19 @@
         <!-- 動画情報表示 -->
         <div class="line-control">
             <h2>動画情報</h2>
-            <button id="copyDetailsBtn" class="copy-btn" onclick="copyToClipboard('videoDetails')">Copy</button>
+            <button id="copyDetailsBtn" class="copy-btn">Copy</button>
         </div>
         <div class="details-container">
             <pre id="videoDetails" class="details"></pre>
         </div>
-
+        
     </div>
 
     <!-- モーダルウィンドウ -->
     <div id="exchangeRateModal" class="exchangeRates-modal">
         <div class="exchangeRates-modal-content">
             <span class="exchangeRates-close" id="closeModal">&times;</span>
-            <h2>為替レート設定</h2>
+            <h2>為替レート設定 ( 1円 = ○○○ )</h2>
             <div class="exchangeRates-scrollable">
                 <table id="exchangeRateTable">
                     <thead>
@@ -204,6 +204,7 @@
                 </table>
             </div>
             <div class="exchangeRates-buttons">
+                <button id="resetExchangeRates" class="exchangeRates-btn reset">初期化</button>
                 <button id="saveExchangeRates" class="exchangeRates-btn">保存</button>
             </div>
         </div>
