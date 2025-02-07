@@ -8,16 +8,6 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* タイトル */
-h1 {
-    text-align: left;
-    margin: 5px 0 10px 5px;
-    font-size: 16px;
-    letter-spacing: 4px;
-    color: #495057;
-    font-family: 'Poppins', 'Arial', sans-serif;
-}
-
 /* 全体のスタイル */
 body {
     font-family: 'Poppins', 'Arial', sans-serif;
@@ -26,6 +16,22 @@ body {
     background-color: #F8F9FA;
     color: #343A40;
     line-height: 1.6;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, #dee2e6, #f9f9f9, #dee2e6);
+    margin: 16px 0;
+}
+
+/* タイトル */
+h1 {
+    text-align: center;
+    margin: 5px 0 10px 5px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: #495057;
 }
 
 /* ボタンデザイン */
@@ -82,7 +88,6 @@ body {
     display: flex;
     flex-direction: column;
     padding: 4px 10px 4px 10px;
-    border-radius: 8px;
     margin-bottom: 10px;
     border: 1px solid #dee2e6;
     border-radius: 4px;
@@ -106,6 +111,7 @@ body {
     font-size: 14px;
     justify-content: space-between;
     padding: 8px 0;
+    flex-wrap: wrap;
 }
 
 .settings-label {
@@ -213,7 +219,7 @@ body {
     padding: 5px 15px 5px 15px;
     border: 1px solid #F5C6CB;
     border-radius: 4px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 4px rgba(242, 132, 159, 0.2);
 }
 
@@ -287,8 +293,8 @@ body {
     color: #1565C0;
 }
 
-/* ラインコントロール（タイトル右端にCopyボタン配置） */
-.line-control {
+/* 詳細内容コントロール */
+.details-control {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -296,7 +302,7 @@ body {
     margin-bottom: 20px;
 }
 
-.line-control h2 {
+.details-control h2 {
     margin: 0;
     font-size: 16px;
     letter-spacing: 10px;
@@ -311,7 +317,7 @@ body {
     background-color: #f9f9f9;
 }
 
-.chat {
+.chat-area {
     font-family: monospace;
     white-space: pre-wrap;
     height: 300px;
@@ -365,7 +371,7 @@ body {
     background-color: #f9f9f9;
 }
 
-.details {
+.details-area {
     font-family: monospace;
     white-space: pre-wrap;
     height: 80px;
@@ -446,6 +452,66 @@ body {
     100% { opacity: 0; transform: translateY(20px); }
 }
 
+/* トグルスイッチのコンテナ */
+.toggle-container {
+    display: flex;
+    justify-content: flex-end; /* 右寄せ */
+    align-items: center;
+    margin-bottom: 8px; /* 下のチャットエリアとの間隔 */
+}
+
+/* トグルスイッチのラベル */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #495057;
+    position: relative;
+    user-select: none;
+}
+
+/* チェックボックスを隠す */
+.toggle-label input[type="checkbox"] {
+    display: none;
+}
+
+/* スライダーのスタイル */
+.toggle-slider {
+    position: relative;
+    width: 40px;
+    height: 20px;
+    background-color: #ccc;
+    border-radius: 20px;
+    transition: background-color 0.3s ease;
+    margin-left: 8px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* スライダーの丸いハンドル */
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* チェック時のスライダー */
+.toggle-label input[type="checkbox"]:checked + .toggle-slider {
+    background-color: #28a745;
+}
+
+/* チェック時のハンドル移動 */
+.toggle-label input[type="checkbox"]:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
 /* モーダル全体（初期状態は非表示） */
 .exchangeRates-modal {
     position: fixed;
@@ -467,7 +533,7 @@ body {
 .exchangeRates-modal-content {
     background: #F8F9FA;
     padding: 20px;
-    width: 500px;
+    width: 600px;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     position: fixed;
@@ -573,10 +639,7 @@ tbody tr:hover {
 
 /* ヘッダー（通貨コード・国名・レート） */
 #exchangeRateTable th {
-    height: 36px; 
-    box-sizing: border-box;
-    font-size: 14px;
-    padding: 12px;
+    padding: 10px;
     background: #E9ECEF;
     color: #495057;
     text-align: center;
@@ -591,15 +654,24 @@ tbody tr:hover {
     width: 20%;
 }
 
-#exchangeRateTable th:nth-child(2), /* 国名 */
+#exchangeRateTable th:nth-child(2), /* 通貨記号 */
 #exchangeRateTable td:nth-child(2) {
     font-size: 14px;
-    letter-spacing: 4px;
+    text-align: center;
+    width: 20%;
 }
 
-#exchangeRateTable th:nth-child(3), /* レート */
+#exchangeRateTable th:nth-child(3), /* 国名 */
 #exchangeRateTable td:nth-child(3) {
-    font-size: 16px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    text-align: center;
+    width: 30%;
+}
+
+#exchangeRateTable th:nth-child(4), /* レート */
+#exchangeRateTable td:nth-child(4) {
+    font-size: 14px;
     width: 30%;
     text-align: center;
 }
@@ -617,9 +689,15 @@ tbody tr:hover {
     transition: border-color 0.3s, box-shadow 0.3s;
 }
 
+/* 無効化されたレートの入力欄 */
+#exchangeRateTable input[disabled] {
+    background-color: #f1f3f5;
+    color: #6c757d;
+}
+
 /* モーダルウィンドウのスクロール領域 */
 .exchangeRates-scrollable {
-    max-height: 400px;
+    max-height: 450px;
     overflow-y: auto;
     border: 1px solid #CED4DA;
     border-radius: 6px;
@@ -679,5 +757,14 @@ tbody tr:hover {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* レイアウト調整 */
+@media (max-width: 768px) {
+    .settings-label, .settings-word, .settings-weight, .settings-symbol, .settings-retry {
+        flex: none;
+        width: 100%;
+        margin-bottom: 8px;
     }
 }

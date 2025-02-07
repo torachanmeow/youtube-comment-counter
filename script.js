@@ -7,6 +7,7 @@
 
     let liveChatPolling = null;        // ポーリングの管理
     let isAscending = true;            // 通貨ソート状態 初期値は昇順
+    let isAutoScrollEnabled = true;    // 初期値ON
 
     const CONFIG = {
         MAX_CHAT_LINES: 500,            // 最大表示チャット行
@@ -51,6 +52,7 @@
         statusDiv: document.getElementById('status'),
         lastFetchTimeDiv: document.getElementById('lastFetchTime'),
         copyChatBtn: document.getElementById('copyChatBtn'),
+        autoScrollToggle: document.getElementById('autoScrollToggle'),
         copyDetailsBtn: document.getElementById('copyDetailsBtn'),
         pollingIntervalInput: document.getElementById('pollingInterval'),
         statsDisplay: document.getElementById('statsDisplay'),
@@ -101,54 +103,10 @@
         ]
     };
 
-    // 通貨コードと国名のマッピング
-    const currencyCountryMap = Object.freeze({
-        "AED": "アラブ首長国連邦",
-        "ARS": "アルゼンチン",
-        "AUD": "オーストラリア",
-        "BGN": "ブルガリア",
-        "BRL": "ブラジル",
-        "CAD": "カナダ",
-        "CHF": "スイス",
-        "CLP": "チリ",
-        "CNY": "中国",
-        "COP": "コロンビア",
-        "CZK": "チェコ",
-        "DKK": "デンマーク",
-        "EUR": "ユーロ圏",
-        "GBP": "イギリス",
-        "HKD": "香港",
-        "HRK": "クロアチア",
-        "HUF": "ハンガリー",
-        "IDR": "インドネシア",
-        "INR": "インド",
-        "ISK": "アイスランド",
-        "JPY": "日本",
-        "KZT": "カザフスタン",
-        "KRW": "韓国",
-        "MXN": "メキシコ",
-        "MYR": "マレーシア",
-        "NOK": "ノルウェー",
-        "NZD": "ニュージーランド",
-        "PEN": "ペルー",
-        "PHP": "フィリピン",
-        "PLN": "ポーランド",
-        "RON": "ルーマニア",
-        "RUB": "ロシア",
-        "SAR": "サウジアラビア",
-        "SEK": "スウェーデン",
-        "SGD": "シンガポール",
-        "THB": "タイ",
-        "TRY": "トルコ",
-        "TWD": "台湾",
-        "USD": "アメリカ",
-        "VND": "ベトナム",
-        "ZAR": "南アフリカ"
-    });
-
     // ライブチャットマネージャー
     const LiveChatManager = {
         userWordHistory: {}, // ユーザーごとの発言履歴を管理
+        currencyInfo: {},    // 通貨情報
         exchangeRates: {},   // 為替レート
         isProcessing: false, // 連打防止用
         pollingInterval: CONFIG.POLLING_INTERVAL_DEFAULT, // ポーリングのインターバル
@@ -168,6 +126,7 @@
                 videoDetails: {}                    // 動画情報
             };
             this.userWordHistory = {};  // キーワード投稿履歴 
+            this.currencyInfo = await fetchCurrencyInfo(); // 通貨情報
             this.exchangeRates = await fetchExchangeRates(); // 為替レート
         }
     };
@@ -190,6 +149,7 @@
         elements.stopBtn.addEventListener("click", handleStopButtonClick);
         elements.toggleApiKeyBtn.addEventListener("click", toggleApiKeyVisibility);
         elements.copyChatBtn.addEventListener("click", copyLiveChat);
+        elements.autoScrollToggle.addEventListener("change", LiveChatAutoScroll); 
         elements.copyDetailsBtn.addEventListener("click", copyVideoDetails);
         elements.openBtn.addEventListener("click", openExchangeRateModal);
         elements.closeBtn.addEventListener("click", closeExchangeRateModal);
@@ -209,6 +169,22 @@
         document.querySelectorAll('[data-save]').forEach(input => {
             input.addEventListener("change", saveSettings);
         });
+    }
+
+    // 通貨情報を外部設定ファイルから取得
+    async function fetchCurrencyInfo() {
+        try {
+            const response = await fetch('currencyInfo.json'); // JSONファイルのURL
+            if (response.ok) {
+                const currencyInfo = await response.json();
+                return currencyInfo; // JSONデータを返す
+            } else {
+                console.warn('外部JSONの取得に失敗しました。HTTPステータス:', response.status);
+            }
+        } catch (error) {
+            console.error('外部JSONの取得中にエラーが発生しました:', error);
+            throw new Error('通貨情報を取得できませんでした');
+        }
     }
 
     // 為替レートを外部設定ファイルから取得
@@ -743,23 +719,35 @@
         element.className = className;
         return element;
     }
-
+    
     // スーパーチャットのメッセージ処理
     function processSuperChatMessage(superChatDetails, messageSpan) {
         const amount = parseFloat(superChatDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
         const currency = superChatDetails.currency;
+
+        // メッセージ内容を更新
+        const originalMessage = messageSpan.textContent;
+        messageSpan.textContent = `${originalMessage} [${currency} ${amount.toLocaleString()}]`;
+
+        // 日本円換算を追加
         const jpyAmount = convertToJPY(amount, currency);
         messageSpan.classList.add(CLASS_NAMES.chatSuperChat);
-        messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
+        messageSpan.textContent += ` => ${jpyAmount.toLocaleString()} 円`;
     }
 
     // スーパーステッカーのメッセージ処理
     function processSuperStickerMessage(superStickerDetails, messageSpan) {
         const amount = parseFloat(superStickerDetails.amountDisplayString.replace(/[^\d.-]/g, '')) || 0;
         const currency = superStickerDetails.currency;
+
+        // メッセージ内容を更新
+        const originalMessage = messageSpan.textContent;
+        messageSpan.textContent = `${originalMessage} [${currency} ${amount.toLocaleString()}]`;
+
+        // 日本円換算を追加
         const jpyAmount = convertToJPY(amount, currency);
         messageSpan.classList.add(CLASS_NAMES.chatSuperSticker);
-        messageSpan.textContent += ` => 日本円: ¥${jpyAmount.toLocaleString()}`;
+        messageSpan.textContent += ` => ${jpyAmount.toLocaleString()} 円`;
     }
 
     // メンバーシップのメッセージ処理
@@ -790,15 +778,37 @@
         const specialWordsWithWeights = getSpecialWordsWithWeights();
         const highlightClass = CLASS_NAMES.chatSpecialWord;
     
-        specialWordsWithWeights.forEach(({ word }) => {
-            const regex = new RegExp(`(${word})`, 'gi');
-            message = message.replace(
-                regex,
-                `<span class="${highlightClass}">$1</span>`
-            );
-        });
-        return message;
-    }
+        // HTML 解析用の DOMParser
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(`<div>${message}</div>`, 'text/html');
+        const root = doc.body.firstChild;
+    
+        function traverseNodes(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                specialWordsWithWeights.forEach(({ word }) => {
+                    const regex = new RegExp(`(${word})`, 'gi');
+                    if (regex.test(node.nodeValue)) {
+                        const newHTML = node.nodeValue.replace(
+                            regex,
+                            `<span class="${highlightClass}">$1</span>`
+                        );
+                        const tempSpan = document.createElement('span');
+                        tempSpan.innerHTML = newHTML;
+                        
+                        // 元のテキストノードを置き換え
+                        node.replaceWith(...tempSpan.childNodes);
+                    }
+                });
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                // 子ノードを再帰的に処理
+                Array.from(node.childNodes).forEach(traverseNodes);
+            }
+        }
+    
+        traverseNodes(root);
+    
+        return root.innerHTML;
+    }    
 
     // 金額は円換算で算出する
     function convertToJPY(amount, currency) {
@@ -898,6 +908,7 @@
             // 初回データ取得
             await fetchVideoDetails(apiKey, videoId, true);
             await fetchLiveChatMessages(apiKey, liveChatId, true);
+            scrollToBottom(elements.liveChatDiv); // 自動スクロールを実行
 
             // ステータスを設定 (取得開始)
             setStatus(true);
@@ -909,6 +920,7 @@
                 try {
                     await fetchVideoDetails(apiKey, videoId, false);
                     await fetchLiveChatMessages(apiKey, liveChatId, false);
+                    scrollToBottom(elements.liveChatDiv); // 自動スクロールを実行
                 } catch (error) {
                     const reason = error.reason || "unknown";
                     if (reason === "liveChatEnded" || reason === "invalidVideoId") {
@@ -952,6 +964,13 @@
         // ユーザーへの通知を表示
         showNotification(`${message} (${reason})`, "error");
     }
+
+    // 自動スクロール
+    function scrollToBottom(element) {
+        if (isAutoScrollEnabled && element) {
+            element.scrollTop = element.scrollHeight;
+        }
+    }    
 
     // ステータスを設定
     function setStatus(isRunning) {
@@ -1046,6 +1065,11 @@
                 .then(() => showNotification("コピーしました！"))
                 .catch(() => showNotification("コピーに失敗しました...", "error"));
         }
+    }
+
+    // トグルスイッチの状態を変更
+    function LiveChatAutoScroll(event) {
+        isAutoScrollEnabled = event.target.checked;
     }
 
     // 通知を表示
@@ -1204,7 +1228,7 @@
     function renderExchangeRates(ascending = true) {
         const table = elements.exchangeRateTable;
         const tableBody = table.querySelector("tbody");
-        tableBody.innerHTML = '';
+        tableBody.innerHTML = ''; // テーブルの内容をクリア
 
         // 通貨コード順にソート
         const sortedRates = Object.entries(LiveChatManager.exchangeRates).sort((a, b) =>
@@ -1212,14 +1236,43 @@
         );
 
         sortedRates.forEach(([currency, rate]) => {
-            const country = currencyCountryMap[currency] || "不明";
+            const currencyInfo = LiveChatManager.currencyInfo[currency] || { symbol: currency, country: "不明" };
 
+            // <tr> 要素を作成
             const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${currency}</td>
-                <td>${country}</td>
-                <td><input type="number" value="${rate}" data-currency="${currency}"></td>
-            `;
+
+            // <td> 通貨コード
+            const currencyCell = document.createElement("td");
+            currencyCell.textContent = currency;
+
+            // <td> 通貨記号
+            const symbolCell = document.createElement("td");
+            symbolCell.textContent = currencyInfo.symbol;
+
+            // <td> 国名
+            const countryCell = document.createElement("td");
+            countryCell.textContent = currencyInfo.country;
+
+            // <td> レート (編集可能/不可)
+            const rateCell = document.createElement("td");
+            const rateInput = document.createElement("input");
+            rateInput.type = "number";
+            rateInput.value = rate;
+            rateInput.dataset.currency = currency;
+
+            // JPY の場合は編集不可
+            if (currency === 'JPY') {
+                rateInput.disabled = true;
+            }
+            rateCell.appendChild(rateInput);
+
+            // 行にセルを追加
+            row.appendChild(currencyCell);
+            row.appendChild(symbolCell);
+            row.appendChild(countryCell);
+            row.appendChild(rateCell);
+
+            // テーブルに行を追加
             tableBody.appendChild(row);
         });
 

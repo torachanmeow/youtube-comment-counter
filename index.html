@@ -93,7 +93,7 @@
         <div id="status" class="status"></div>
 
         <div class="latest-info">
-            最新値：<span id="lastFetchTime">00:00:00</span>
+            最新：<span id="lastFetchTime">00:00:00</span>
         </div>
 
         <div class="totalPoints-container">
@@ -102,8 +102,6 @@
                 <span id="totalPointsDisplay" class="fetch-time">0</span>
             </div>
         </div>
-
-        <hr />
 
         <div class="points-container">
             <h2>Points</h2>
@@ -153,20 +151,27 @@
 
         <hr />
 
-        <div class="line-control">
+        <div class="details-control">
             <h2>ライブチャット</h2>
             <button id="copyChatBtn" class="copy-btn">Copy</button>
         </div>
+        <div class="toggle-container">
+            <label for="autoScrollToggle" class="toggle-label">
+                自動スクロール
+                <input type="checkbox" id="autoScrollToggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
         <div class="chat-container">
-            <pre id="liveChat" class="chat"></pre>
+            <pre id="liveChat" class="chat-area"></pre>
         </div>
 
-        <div class="line-control">
+        <div class="details-control">
             <h2>動画情報</h2>
             <button id="copyDetailsBtn" class="copy-btn">Copy</button>
         </div>
         <div class="details-container">
-            <pre id="videoDetails" class="details"></pre>
+            <pre id="videoDetails" class="details-area"></pre>
         </div>
         
     </div>
@@ -181,7 +186,8 @@
                     <thead>
                         <tr>
                             <th id="sortableCurrencyHeader" class="sortable">コード <span id="currencySortArrow">▲</span></th>
-                            <th>国</th>
+                            <th>通貨記号</th>
+                            <th>国名</th>
                             <th>レート</th>
                         </tr>
                     </thead>
