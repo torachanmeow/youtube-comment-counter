@@ -12,7 +12,7 @@
     const CONFIG = {
         MAX_CHAT_LINES: 500,            // 最大表示チャット行
         MAX_MESSAGE_IDS: 5000,          // 内部ログデータ上限
-        USER_HISTORY_LIMIT: 100,        // ユーザー履歴
+        USER_HISTORY_LIMIT: 2000,       // ユーザー履歴
         POLLING_TIMEOUT_MS: 10000,      // APIのタイムアウトミリ秒
         POLLING_INTERVAL_DEFAULT: 30    // ポーリングインターバルの初期値
     };
