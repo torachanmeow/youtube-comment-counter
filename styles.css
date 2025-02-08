@@ -1,21 +1,20 @@
+/* 全体のスタイル */
+body {
+    background-color: rgba(0,0,0,0);
+    font-family: 'Poppins', 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    color: #343A40;
+    line-height: 1.6;
+}
+
 /* コンテナ */
 .container {
     max-width: 650px;
     margin: auto;
     padding: 20px 40px;
-    background-color: #F8F9FA;
     border-radius: 4px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* 全体のスタイル */
-body {
-    font-family: 'Poppins', 'Arial', sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #F8F9FA;
-    color: #343A40;
-    line-height: 1.6;
 }
 
 hr {
@@ -56,6 +55,18 @@ h1 {
     transition: background-color 0.3s;
 }
 
+.reset-btn {
+    margin-left: auto;
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    background: #28a745;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
 .settings-btn {
     padding: 4px 30px 4px 30px;
     font-size: 14px;
@@ -74,9 +85,13 @@ h1 {
     background-color: #0056b3;
     transform: scale(1.05);
 }
+.reset-btn:hover {
+    background: #218838;
+}
 
 /* 無効化されたボタン */
 .btn:disabled,
+.reset-btn:disabled,
 .toggle-btn:disabled,
 .copy-btn:disabled {
     background-color: #6c757d;
@@ -180,33 +195,44 @@ h1 {
     color: #d63384;
 }
 
-/* 合計ポイント */
+/* 合計ポイント(カスタマイズ可能) */
 .totalPoints-container {
+    font-size: var(--totalPointsFontSize, 30px);
+    color: var(--totalPointsTextColor, #495057);
+    background-color: var(--totalPointsBgColor, rgba(248, 249, 250, 0));
     display: flex;
     flex-direction: column;
-    padding: 5px 15px 5px 15px;
+    padding: 5px 15px;
     border-radius: 4px;
     margin-bottom: 10px;
     border: 1px solid #dee2e6;
-    border-radius: 4px;
-    background-color: #f9f9f9;
 }
 
+/* 非表示時のスタイル */
+.totalPoints-container.hide-label .totalPoints-item {
+    justify-content: center;
+}
+
+.totalPoints-container.hide-label .totalPoints-label {
+    display: none;
+}
+
+/* 合計項目全体のスタイル */
 .totalPoints-item {
     display: flex;
-    font-size: 30px;
     justify-content: space-between;
     padding: 8px;
 }
 
+/* 合計ラベルのスタイル */
 .totalPoints-label {
     letter-spacing: 10px;
-    color: #495057;
 }
 
+/* 数値のスタイル */
 #totalPointsDisplay {
-    font-size: 30px;
     letter-spacing: 12px;
+    text-align: center;
     display: flex;
     flex-direction: column;
 }
@@ -758,6 +784,41 @@ tbody tr:hover {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* カラーピッカーの外観を整える */
+.color-picker-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+input[type="color"] {
+    appearance: none; /* デフォルトのボタンを非表示 */
+    border: none;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border-radius: 4px;
+    border: 2px solid #ccc;
+}
+
+input[type="color"]::-moz-color-swatch {
+    border-radius: 4px;
+    border: 2px solid #ccc;
+}
+
+/* カラーコードの表示 */
+.color-code {
+    font-family: monospace;
+    font-size: 12px;
+    color: #333;
 }
 
 /* レイアウト調整 */

@@ -74,12 +74,12 @@
         <div class="settings-half-container">          
             <div class="settings-item">
                 <label class="settings-label" for="videoId">動画ID</label>
-                <input class="settings-word" type="text" id="videoId" placeholder="動画IDを入力してください"  data-save>
+                <input class="settings-word" type="text" id="videoId" placeholder="動画IDを入力してください" data-save>
             </div>
             <div class="settings-item">
                 <label class="settings-label" for="pollingInterval">ポーリング(秒)</label>
                 <span class="settings-symbol"></span>
-                <input class="settings-value" type="number" id="pollingInterval" value="30" min="1" max="999" step="1"  data-save>
+                <input class="settings-value" type="number" id="pollingInterval" value="30" min="1" max="999" step="1" data-save>
             </div>
         </div>
 
@@ -100,6 +100,44 @@
             <div class="totalPoints-item">
                 <span class="totalPoints-label">合計</span>
                 <span id="totalPointsDisplay" class="fetch-time">0</span>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            <div class="settings-item">
+                <label class="settings-label" for="totalPointsFontSize">フォントサイズ</label>
+                <input type="number" id="totalPointsFontSize" value="30" min="10" max="100" step="1" data-save>
+            </div>     
+            <div class="settings-item">
+                <label class="settings-label">フォントカラー</label>
+                <div class="color-picker-container">
+                    <input type="color" id="totalPointsTextColor" value="#495057" data-save>
+                    <span class="color-code" id="textColorCode">#495057</span>
+                </div>
+            </div> 
+            <div class="settings-item">
+                <label class="settings-label">背景カラー</label>
+                <div class="color-picker-container">
+                    <input type="color" id="totalPointsBgColor" value="#F8F9FA" data-save>
+                    <span class="color-code" id="bgColorCode">#F8F9FA</span>
+                </div>
+            </div>
+            <div class="settings-item">
+                <label class="settings-label" for="totalPointsBgTransparent">背景透過</label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="totalPointsBgTransparent" data-save>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="settings-item">
+                <label class="settings-label" for="totalPointsOnly">ポイントのみ表示</label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="totalPointsOnly" data-save>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>          
+            <div class="settings-item">
+                <button id="totalPointsResetBtn" class="reset-btn">全て初期値にリセット</button>
             </div>
         </div>
 

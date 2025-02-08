@@ -17,6 +17,15 @@
         POLLING_INTERVAL_DEFAULT: 30    // ポーリングインターバルの初期値
     };
 
+    // 初期値を定義
+    const DEFAULT_VALUES = {
+        totalPointsFontSize: 30,
+        totalPointsTextColor: '#495057',
+        totalPointsBgColor: '#F8F9FA',
+        totalPointsBgTransparent: false,
+        totalPointsOnly: false,  
+    };
+
     // CSSクラス
     const CLASS_NAMES = {
         chatMessage: 'chat-message',
@@ -39,6 +48,13 @@
         executing: 'executing',
         stopped: 'stopped',
         show: 'show',
+    };
+
+    // CSS 変数の定数オブジェクト
+    const CSS_VARIABLES = {
+        totalPointsFontSize: '--totalPointsFontSize',
+        totalPointsTextColor: '--totalPointsTextColor',
+        totalPointsBgColor: '--totalPointsBgColor'
     };
 
     // HTML要素
@@ -70,6 +86,19 @@
         exchangeRateTable: document.getElementById('exchangeRateTable'),
         sortableCurrencyHeader: document.getElementById('sortableCurrencyHeader'),
 
+        // 合計ポイントデザイン設定
+        textColorCode: document.getElementById('textColorCode'),
+        bgColorCode: document.getElementById('bgColorCode'),
+        totalPointsFontSize: document.getElementById('totalPointsFontSize'),
+        totalPointsTextColor: document.getElementById('totalPointsTextColor'),
+        totalPointsBgColor: document.getElementById('totalPointsBgColor'),
+        totalPointsBgTransparent: document.getElementById('totalPointsBgTransparent'),
+        totalPointsResetBtn: document.getElementById('totalPointsResetBtn'),
+        totalPointsOnly: document.getElementById('totalPointsOnly'),
+        totalPointsContainer: document.querySelector('.totalPoints-container'),
+        totalPointsLabel: document.querySelector('.totalPoints-label'), 
+        totalPointsDisplay: document.getElementById('totalPointsDisplay'),
+
         // 集計表示関連
         superChatAmount: document.getElementById('superChatAmount'),
         superStickerAmount: document.getElementById('superStickerAmount'),
@@ -82,7 +111,6 @@
         superStickerPoints: document.getElementById('superStickerPoints'),
         memberPoints: document.getElementById('memberPoints'),
         likePoints: document.getElementById('likePoints'),
-        totalPointsDisplay: document.getElementById('totalPointsDisplay'),
 
         // 重み付け設定
         superChatWeight: document.getElementById('superChatWeight'),
@@ -141,6 +169,7 @@
         // データの初期化
         await LiveChatManager.initialize();
         loadSettings();
+        updateTotalPointsStyle();
         updateExchangeRateDisplay();
 
         // イベントリスナー登録
@@ -148,20 +177,30 @@
         elements.startBtn.addEventListener("click", handleStartButtonClick);
         elements.stopBtn.addEventListener("click", handleStopButtonClick);
         elements.toggleApiKeyBtn.addEventListener("click", toggleApiKeyVisibility);
+        elements.totalPointsResetBtn.addEventListener('click', resetAllTotalPointsToDefault);
         elements.copyChatBtn.addEventListener("click", copyLiveChat);
-        elements.autoScrollToggle.addEventListener("change", LiveChatAutoScroll); 
         elements.copyDetailsBtn.addEventListener("click", copyVideoDetails);
         elements.openBtn.addEventListener("click", openExchangeRateModal);
         elements.closeBtn.addEventListener("click", closeExchangeRateModal);
         elements.resetExchangeRatesBtn.addEventListener("click", resetExchangeRates);
         elements.saveExchangeRatesBtn.addEventListener("click", saveExchangeRates);
         elements.sortableCurrencyHeader.addEventListener("click", toggleCurrencySort);
+        elements.totalPointsFontSize.addEventListener("input", updateTotalPointsStyle);
+        elements.totalPointsTextColor.addEventListener("input", updateTotalPointsStyle);
+        elements.totalPointsBgColor.addEventListener("input", updateTotalPointsStyle);
+        elements.totalPointsBgTransparent.addEventListener("change", updateTotalPointsStyle);
+        elements.totalPointsOnly.addEventListener("change", updateTotalPointsStyle);   
+        elements.autoScrollToggle.addEventListener("change", liveChatAutoScroll); 
 
         // モーダルの外側クリック時
         window.addEventListener("click", closeExchangeRateModalOnOutsideClick);
 
         // 為替レートリストを描画
         renderExchangeRates(isAscending);
+
+        // カラーピッカーの初期化
+        updateColorCode(elements.totalPointsTextColor, elements.textColorCode);
+        updateColorCode(elements.totalPointsBgColor, elements.bgColorCode);
     }
 
     // 画面値保存のイベントリスナーまとめ
@@ -1031,11 +1070,17 @@
     function saveSettings() {
         try {
             const settings = {};
-    
+
             document.querySelectorAll('[data-save]').forEach(input => {
-                settings[input.id] = input.value.trim();
+                if (input) {
+                    if (input.type === "checkbox") {
+                        settings[input.id] = input.checked; // チェックボックスは true/false を保存
+                    } else if (typeof input.value === "string") {
+                        settings[input.id] = input.value.trim();
+                    }
+                }
             });
-    
+
             localStorage.setItem('LiveChatSettings', JSON.stringify(settings));
         } catch (error) {
             console.error("設定の保存中にエラーが発生しました:", error);
@@ -1046,17 +1091,23 @@
     // 画面設定をロードする
     function loadSettings() {
         try {
-            const settings = JSON.parse(localStorage.getItem('LiveChatSettings')) || {};
-    
+            const settings = JSON.parse(localStorage.getItem('LiveChatSettings')) || {}; 
+
             document.querySelectorAll('[data-save]').forEach(input => {
-                input.value = settings[input.id] || '';
+                if (input && settings.hasOwnProperty(input.id)) {
+                    if (input.type === "checkbox") {
+                        input.checked = settings[input.id] === true; // チェックボックスの値を復元
+                    } else {
+                        input.value = settings[input.id];
+                    }
+                }
             });
         } catch (error) {
             console.error("設定の読み込み中にエラーが発生しました:", error);
             showNotification("設定の読み込みに失敗しました", "error");
         }
     }
-    
+
     // クリップボードにコピーする
     function copyToClipboard(element) {
         if (element) {
@@ -1068,7 +1119,7 @@
     }
 
     // トグルスイッチの状態を変更
-    function LiveChatAutoScroll(event) {
+    function liveChatAutoScroll(event) {
         isAutoScrollEnabled = event.target.checked;
     }
 
@@ -1142,6 +1193,70 @@
         const apiKeyInput = elements.apiKeyInput;
         apiKeyInput.type = apiKeyInput.type === "password" ? "text" : "password";
         elements.toggleApiKeyBtn.textContent = apiKeyInput.type === "password" ? "表示" : "隠す";
+    }
+
+    // カラーコードを更新
+    function updateColorCode(inputElement, codeElement) {
+        if (!inputElement || !codeElement) return;
+    
+        // 初回ロード時の色を反映
+        codeElement.textContent = inputElement.value.toUpperCase();
+    
+        // 色変更時にコードを更新し、スタイルを適用
+        inputElement.addEventListener("input", () => {
+            codeElement.textContent = inputElement.value.toUpperCase();
+            updateTotalPointsStyle();
+        });
+    }    
+
+    // 合計ポイントのスタイルを更新
+    function updateTotalPointsStyle() {
+        const fontSize = elements.totalPointsFontSize.value + 'px';
+        const textColor = elements.totalPointsTextColor.value;
+        const bgColor = elements.totalPointsBgColor.value;
+        const isTransparent = elements.totalPointsBgTransparent.checked;
+        const isPointsOnly = elements.totalPointsOnly.checked;
+
+        // 背景色の決定（透過ONなら透明、OFFなら設定した色）
+        const finalBgColor = isTransparent ? 'rgba(0,0,0,0)' : bgColor;
+
+        // CSS変数を更新
+        document.documentElement.style.setProperty(CSS_VARIABLES.totalPointsFontSize, fontSize);
+        document.documentElement.style.setProperty(CSS_VARIABLES.totalPointsTextColor, textColor);
+        document.documentElement.style.setProperty(CSS_VARIABLES.totalPointsBgColor, finalBgColor);
+
+        // ポイントのみ表示の処理
+        if (isPointsOnly) {
+            elements.totalPointsContainer.classList.add('hide-label');
+        } else {
+            elements.totalPointsContainer.classList.remove('hide-label');
+        }
+    }
+
+    // 合計ポイントのスタイルを初期値にリセット
+    function resetAllTotalPointsToDefault() {
+        // 初期値を設定
+        Object.keys(DEFAULT_VALUES).forEach(key => {
+            const input = elements[key];
+            const defaultValue = DEFAULT_VALUES[key];
+
+            if (input) {
+                if (input.type === 'checkbox') {
+                    input.checked = defaultValue;
+                } else {
+                    input.value = defaultValue;
+    
+                    // `input[type="color"]` の UI も更新
+                    if (input.type === "color") {
+                        input.dispatchEvent(new Event("input")); // 変更イベントを手動で発火
+                    }
+                }
+            }
+        });
+
+        // 設定を保存して画面に反映
+        saveSettings();
+        updateTotalPointsStyle();
     }
 
     // ライブチャットコピー ボタンクリックイベント
