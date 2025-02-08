@@ -71,6 +71,47 @@
             </div>
         </div>
 
+        <details class="settings-container">
+            <summary class="settings-header">合計のデザイン(サイズ/カラー)を調整</summary>
+            <div class="settings-content">
+                <div class="settings-item">
+                    <label class="settings-label" for="totalPointsFontSize">フォントサイズ</label>
+                    <input type="number" id="totalPointsFontSize" value="30" min="10" max="100" step="1" data-save>
+                </div>     
+                <div class="settings-item">
+                    <label class="settings-label">フォントカラー</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="totalPointsTextColor" value="#495057" data-save>
+                        <span class="color-code" id="textColorCode">#495057</span>
+                    </div>
+                </div> 
+                <div class="settings-item">
+                    <label class="settings-label">背景カラー</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="totalPointsBgColor" value="#F8F9FA" data-save>
+                        <span class="color-code" id="bgColorCode">#F8F9FA</span>
+                    </div>
+                </div>
+                <div class="settings-item">
+                    <label class="settings-label" for="totalPointsBgTransparent">背景透過</label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="totalPointsBgTransparent" data-save>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-item">
+                    <label class="settings-label" for="totalPointsOnly">ポイントのみ表示</label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="totalPointsOnly" data-save>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>          
+                <div class="settings-item">
+                    <button id="totalPointsResetBtn" class="reset-btn">全て初期値にリセット</button>
+                </div>
+            </div>
+        </details>
+
         <div class="settings-half-container">          
             <div class="settings-item">
                 <label class="settings-label" for="videoId">動画ID</label>
@@ -102,45 +143,7 @@
                 <span id="totalPointsDisplay" class="fetch-time">0</span>
             </div>
         </div>
-
-        <div class="settings-container">
-            <div class="settings-item">
-                <label class="settings-label" for="totalPointsFontSize">フォントサイズ</label>
-                <input type="number" id="totalPointsFontSize" value="30" min="10" max="100" step="1" data-save>
-            </div>     
-            <div class="settings-item">
-                <label class="settings-label">フォントカラー</label>
-                <div class="color-picker-container">
-                    <input type="color" id="totalPointsTextColor" value="#495057" data-save>
-                    <span class="color-code" id="textColorCode">#495057</span>
-                </div>
-            </div> 
-            <div class="settings-item">
-                <label class="settings-label">背景カラー</label>
-                <div class="color-picker-container">
-                    <input type="color" id="totalPointsBgColor" value="#F8F9FA" data-save>
-                    <span class="color-code" id="bgColorCode">#F8F9FA</span>
-                </div>
-            </div>
-            <div class="settings-item">
-                <label class="settings-label" for="totalPointsBgTransparent">背景透過</label>
-                <label class="toggle-label">
-                    <input type="checkbox" id="totalPointsBgTransparent" data-save>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="settings-item">
-                <label class="settings-label" for="totalPointsOnly">ポイントのみ表示</label>
-                <label class="toggle-label">
-                    <input type="checkbox" id="totalPointsOnly" data-save>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>          
-            <div class="settings-item">
-                <button id="totalPointsResetBtn" class="reset-btn">全て初期値にリセット</button>
-            </div>
-        </div>
-
+        
         <div class="points-container">
             <h2>Points</h2>
             <div class="points-item">

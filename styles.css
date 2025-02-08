@@ -109,6 +109,22 @@ h1 {
     background-color: #f9f9f9;
 }
 
+.settings-header {
+    font-size: 14px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    padding: 4px;
+    background: #f9f9f9;
+    text-align: center;
+}
+
+.settings-content {
+    padding: 4px;
+}
+details[open] .settings-header {
+    background: #d9d9d9;
+}
+
 .settings-half-container {
     display: flex;
     flex-direction: column;
