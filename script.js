@@ -290,11 +290,6 @@
         }
     }
 
-    // API で取得できなかった通貨を設定ファイルで補完
-    function mergeExchangeRates(apiRates, fileRates) {
-        return { ...fileRates, ...apiRates }; // API 優先で統合
-    }
-
     // 集計結果を更新して表示
     function updateStatsDisplay(isInitialLoad = false) {
         const stats = LiveChatManager.data.stats;
@@ -848,38 +843,46 @@
         if (!message) return message;
         const specialWordsWithWeights = getSpecialWordsWithWeights();
         const highlightClass = CLASS_NAMES.chatSpecialWord;
-    
-        // HTML 解析用の DOMParser
+
+        // 特定ワードを長さの降順でソート（長いワードが優先される）
+        specialWordsWithWeights.sort((a, b) => b.word.length - a.word.length);
+
+        // HTML解析用のDOMParser
         const parser = new DOMParser();
         const doc = parser.parseFromString(`<div>${message}</div>`, 'text/html');
         const root = doc.body.firstChild;
-    
+
         function traverseNodes(node) {
             if (node.nodeType === Node.TEXT_NODE) {
+                let updatedText = node.nodeValue;
+
+                // 長いワードから順番に置き換えを実行
                 specialWordsWithWeights.forEach(({ word }) => {
                     const regex = new RegExp(`(${word})`, 'gi');
-                    if (regex.test(node.nodeValue)) {
-                        const newHTML = node.nodeValue.replace(
-                            regex,
-                            `<span class="${highlightClass}">$1</span>`
-                        );
-                        const tempSpan = document.createElement('span');
-                        tempSpan.innerHTML = newHTML;
-                        
-                        // 元のテキストノードを置き換え
-                        node.replaceWith(...tempSpan.childNodes);
-                    }
+                    updatedText = updatedText.replace(
+                        regex,
+                        `<span class="${highlightClass}">$1</span>`
+                    );
                 });
+
+                // 変更があった場合にのみノードを置き換える
+                if (updatedText !== node.nodeValue) {
+                    const tempSpan = document.createElement('span');
+                    tempSpan.innerHTML = updatedText;
+
+                    // 元のテキストノードを置き換え
+                    node.replaceWith(...tempSpan.childNodes);
+                }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 // 子ノードを再帰的に処理
                 Array.from(node.childNodes).forEach(traverseNodes);
             }
         }
-    
+
         traverseNodes(root);
-    
+
         return root.innerHTML;
-    }    
+    }
 
     // 金額は円換算で算出する
     function convertToJPY(amount, currency) {
