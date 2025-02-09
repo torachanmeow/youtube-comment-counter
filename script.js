@@ -155,7 +155,7 @@
             };
             this.userWordHistory = {};  // キーワード投稿履歴 
             this.currencyInfo = await fetchCurrencyInfo(); // 通貨情報
-            this.exchangeRates = await fetchExchangeRates(); // 為替レート
+            this.exchangeRates = await getValidExchangeRates(); // 為替レート
         }
     };
 
@@ -226,42 +226,74 @@
         }
     }
 
-    // 為替レートを外部設定ファイルから取得
+    // 為替レートをAPI & 設定ファイルから取得
     async function fetchExchangeRates() {
-        let storedRates = null;
-    
-        // ローカルストレージから為替レートを取得
-        const localData = localStorage.getItem('LiveChatExchangeRate');
-        if (localData) {
+        const apiRates = await fetchApiExchangeRates();
+        const fileRates = await fetchFileExchangeRates();
+        
+        // API データが有効なら API を優先し、API にない通貨は設定ファイルで補完
+        const exchangeRates = apiRates ? { ...fileRates, ...apiRates } : fileRates;
+
+        // ローカルストレージへ保存（取得時のタイムスタンプも保存）
+        localStorage.setItem('LiveChatExchangeRate', JSON.stringify({
+            exchangeRates,
+            timestamp: Date.now()
+        }));
+
+        return exchangeRates;
+    }
+
+    // 1週間以内のデータがあればローカルストレージのデータを使う
+    async function getValidExchangeRates() {
+        const storedData = localStorage.getItem('LiveChatExchangeRate');
+
+        if (storedData) {
             try {
-                storedRates = JSON.parse(localData).exchangeRates;
-                return storedRates;
+                const parsedData = JSON.parse(storedData);
+                const savedTimestamp = parsedData.timestamp || 0;
+                const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000); // 1週間前のタイムスタンプ
+
+                if (savedTimestamp >= oneWeekAgo) {
+                    // 1週間以内のデータならローカルストレージのデータを使用
+                    return parsedData.exchangeRates;
+                }
             } catch (error) {
-                console.error('ローカルストレージのデータが無効です:', error);
+                console.warn("ローカルストレージのデータが破損していたため、再取得します。");
             }
         }
+
+        // 1週間以上前、またはデータがない場合は最新のデータを取得
+        return await fetchExchangeRates();
+    }
     
-        // ローカルストレージにデータがない場合は外部JSONから取得
+    // API から為替レートを取得
+    async function fetchApiExchangeRates() {
         try {
-            const response = await fetch('exchangeRates.json'); // JSONファイルのURL
-            if (response.ok) {
-                const externalRates = await response.json();
-    
-                // 外部JSONのデータをローカルストレージに保存
-                localStorage.setItem(
-                    'LiveChatExchangeRate',
-                    JSON.stringify({ exchangeRates: externalRates })
-                );
-                return externalRates;
-            } else {
-                console.warn('外部JSONの取得に失敗しました。HTTPステータス:', response.status);
-            }
+            // open-source currency data API (https://frankfurter.dev/)
+            const response = await fetch('https://api.frankfurter.app/latest?base=JPY');
+            if (!response.ok) return null;
+
+            const apiData = await response.json();
+            return apiData.rates;
         } catch (error) {
-            console.error('外部JSONの取得中にエラーが発生しました:', error);
+            return null;
         }
-    
-        throw new Error('為替レートを取得できませんでした');
-    }     
+    }
+
+    // 設定ファイルから為替レートを取得
+    async function fetchFileExchangeRates() {
+        try {
+            const response = await fetch('exchangeRates.json');
+            return response.ok ? await response.json() : {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    // API で取得できなかった通貨を設定ファイルで補完
+    function mergeExchangeRates(apiRates, fileRates) {
+        return { ...fileRates, ...apiRates }; // API 優先で統合
+    }
 
     // 集計結果を更新して表示
     function updateStatsDisplay(isInitialLoad = false) {
@@ -1313,7 +1345,11 @@
             settings.exchangeRates[currency] = rate;
         });
     
-        localStorage.setItem('LiveChatExchangeRate', JSON.stringify(settings));
+        // ローカルストレージへ保存
+        localStorage.setItem('LiveChatExchangeRate', JSON.stringify({
+            ...settings,
+            timestamp: Date.now()
+        }));
     
         // 為替レートの状態を更新
         updateExchangeRateDisplay();
