@@ -5,9 +5,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     window.DEBUG = urlParams.get('debug') === 'true' || false;    
 
-    let liveChatPolling = null;        // ポーリングの管理
     let isAscending = true;            // 通貨ソート状態 初期値は昇順
     let isAutoScrollEnabled = true;    // 初期値ON
+    let pollingManager = null;         // ポーリング制御用オブジェクト
 
     const CONFIG = {
         MAX_CHAT_LINES: 500,            // 最大表示チャット行
@@ -24,6 +24,15 @@
         totalPointsBgColor: '#F8F9FA',
         totalPointsBgTransparent: false,
         totalPointsOnly: false,  
+    };
+
+    // ステータス定数
+    const LIVE_STATUS = {
+        START: "start",
+        STOP: "stop",
+        PAUSE: "pause",
+        RESUME: "resume",
+        UNSET: "unset" // 未設定
     };
 
     // CSSクラス
@@ -46,6 +55,7 @@
         detailItem: 'detail-item',
         status: 'status',
         executing: 'executing',
+        pause: 'pause',     
         stopped: 'stopped',
         show: 'show',
     };
@@ -60,6 +70,7 @@
     // HTML要素
     const elements = {
         startBtn: document.getElementById('startBtn'),
+        pauseBtn: document.getElementById('pauseBtn'),     
         stopBtn: document.getElementById('stopBtn'),
         apiKeyInput: document.getElementById('apiKey'),
         videoIdInput: document.getElementById('videoId'),
@@ -137,7 +148,6 @@
         currencyInfo: {},    // 通貨情報
         exchangeRates: {},   // 為替レート
         isProcessing: false, // 連打防止用
-        pollingInterval: CONFIG.POLLING_INTERVAL_DEFAULT, // ポーリングのインターバル
         
         data: {},           // モニタリングデータ
 
@@ -159,6 +169,102 @@
         }
     };
 
+    // ポーリング制御用クラス
+    class PollingManager {
+        constructor(apiKey, videoId, pollingInterval = CONFIG.POLLING_INTERVAL_DEFAULT) {
+            this.apiKey = apiKey;
+            this.videoId = videoId;
+            this.pollingInterval = pollingInterval;
+            this.isPaused = false;
+            this.liveChatPolling = null;
+            this.liveChatId = null;
+        }
+
+        isPolling() {
+            return this.liveChatPolling !== null;
+        }
+
+        // 開始
+        async start() {
+            if (this.liveChatPolling !== null) return false;
+            this.stop(); // 既存のポーリングを停止
+            this.isPaused = false;
+            setLiveStatus(LIVE_STATUS.UNSET);
+
+            try {
+                this.liveChatId = await getLiveChatId(this.apiKey, this.videoId);
+                if (!this.liveChatId) {
+                    showNotification("ライブチャットIDが取得できませんでした", "error");
+                    return;
+                }
+
+                await fetchVideoDetails(this.apiKey, this.videoId, true);
+                await fetchLiveChatMessages(this.apiKey, this.liveChatId, true);
+                scrollToBottom(elements.liveChatDiv);
+
+                this.liveChatPolling = setInterval(async () => {
+                    if (this.isPaused) return;
+                    try {
+                        await fetchVideoDetails(this.apiKey, this.videoId, false);
+                        await fetchLiveChatMessages(this.apiKey, this.liveChatId, false);
+                        scrollToBottom(elements.liveChatDiv);
+                    } catch (error) {
+                        this.handlePollingError(error);
+                    }
+                }, this.pollingInterval * 1000);
+
+                setLiveStatus(LIVE_STATUS.START);
+                return true;
+            } catch (error) {
+                notifyAPIError(error);
+                this.stop();
+                return false;
+            }
+        }
+
+        // 一時停止
+        pause() {
+            if (this.liveChatPolling !== null && !this.isPaused) {
+                this.isPaused = true;
+                setLiveStatus(LIVE_STATUS.PAUSE);
+            }
+        }
+
+        // 一時停止(解除)
+        resume() {
+            if (this.liveChatPolling !== null && this.isPaused) {
+                this.isPaused = false;
+                setLiveStatus(LIVE_STATUS.RESUME);
+            }
+        }
+
+        // 停止
+        stop() {
+            if (this.liveChatPolling !== null) {
+                clearInterval(this.liveChatPolling);
+                this.liveChatPolling = null;
+            }
+            this.isPaused = false;
+            setLiveStatus(LIVE_STATUS.UNSET);
+        }
+
+        // ポーリング エラーハンドリング
+        handlePollingError(error) {
+            const reason = error.reason || "unknown";
+
+            if (reason === "liveChatEnded" || reason === "invalidVideoId") {
+                showNotification("ライブ配信は終了しました", "error");
+                this.stop();
+                setLiveStatus(LIVE_STATUS.STOP);
+            } else if (reason === "quotaExceeded") {
+                showNotification("クォータ制限を超えました。一時停止します。", "error");
+                this.pause();
+            } else {
+                console.error("予期しないエラー:", error);
+            }
+        }
+    }
+
     // デバッグ時は、ライブチャットマネージャーをグローバルとして定義
     if (window.DEBUG) {
         window.LiveChatManager = LiveChatManager;
@@ -175,6 +281,7 @@
         // イベントリスナー登録
         setupSettingsListeners();
         elements.startBtn.addEventListener("click", handleStartButtonClick);
+        elements.pauseBtn.addEventListener("click", handlePauseAndResumeButtonClick);
         elements.stopBtn.addEventListener("click", handleStopButtonClick);
         elements.toggleApiKeyBtn.addEventListener("click", toggleApiKeyVisibility);
         elements.totalPointsResetBtn.addEventListener('click', resetAllTotalPointsToDefault);
@@ -288,6 +395,73 @@
         } catch (error) {
             return {};
         }
+    }
+
+    // 自動スクロール
+    function scrollToBottom(element) {
+        if (isAutoScrollEnabled && element) {
+            element.scrollTop = element.scrollHeight;
+        }
+    }
+
+    // ライブステータスを設定
+    function setLiveStatus(status) {
+        if (!elements.statusDiv) return;
+
+        // すべてのステータスクラスを削除
+        elements.statusDiv.classList.remove(
+            CLASS_NAMES.executing,
+            CLASS_NAMES.stopped,
+            CLASS_NAMES.pause
+        );
+
+        // 状態に応じたクラスを追加
+        switch (status) {
+            case LIVE_STATUS.START:
+            case LIVE_STATUS.RESUME:
+                elements.statusDiv.classList.add(CLASS_NAMES.executing);
+                elements.statusDiv.textContent = "ライブチャット取得中...";
+                break;
+            case LIVE_STATUS.PAUSE:
+                elements.statusDiv.classList.add(CLASS_NAMES.pause);
+                elements.statusDiv.textContent = "一時停止しています";
+                break;
+            case LIVE_STATUS.STOP:
+                elements.statusDiv.classList.add(CLASS_NAMES.stopped);
+                elements.statusDiv.textContent = "停止しました";
+                break;
+            case LIVE_STATUS.UNSET:
+                elements.statusDiv.textContent = "";
+                break;
+        }
+
+        // ボタンと入力欄の状態をまとめて更新
+        updateControlState();
+    }
+
+    // ボタンと入力欄の状態をまとめて更新
+    function updateControlState() {
+        const isDisabled = pollingManager && pollingManager.isPolling();
+        const isPaused = pollingManager && pollingManager.isPaused;
+
+        // ボタンの活性状態変更
+        elements.startBtn.disabled = isDisabled;
+        elements.pauseBtn.disabled = !isDisabled;
+        elements.stopBtn.disabled = !isDisabled;
+        elements.pauseBtn.classList.toggle("active", isPaused);
+
+        // 入力欄の活性状態変更
+        elements.apiKeyInput.disabled = isDisabled;
+        elements.videoIdInput.disabled = isDisabled;
+        elements.pollingIntervalInput.disabled = isDisabled;
+
+        elements.wordInputs.forEach(input => (input.disabled = isDisabled));
+        elements.weightInputs.forEach(input => (input.disabled = isDisabled));
+
+        elements.likeWeight.disabled = isDisabled;
+        elements.superChatWeight.disabled = isDisabled;
+        elements.superStickerWeight.disabled = isDisabled;
+        elements.memberWeight.disabled = isDisabled;
     }
 
     // 集計結果を更新して表示
@@ -954,76 +1128,6 @@
         }
     }
 
-    // ライブチャットと動画情報のポーリングを開始
-    async function startPolling(apiKey, videoId) {
-        // 既存のポーリングを停止（重複実行を防ぐ）
-        clearInterval(liveChatPolling);
-
-        // 0以下はデフォルト設定
-        const newInterval = parseInt(elements.pollingIntervalInput.value, 10);
-        if (isNaN(newInterval) || newInterval <= 0) {
-            LiveChatManager.pollingInterval = CONFIG.POLLING_INTERVAL_DEFAULT;
-            elements.pollingIntervalInput.value = CONFIG.POLLING_INTERVAL_DEFAULT; // 入力欄も戻す
-        } else {
-            LiveChatManager.pollingInterval = newInterval;
-        }    
-        
-        try {
-            // 初期化処理を実行
-            initializePolling();
-            
-            // ライブチャットIDを取得
-            const liveChatId = await getLiveChatId(apiKey, videoId);
-            if (!liveChatId) {
-                showNotification("ライブチャットIDが取得できませんでした", "error");
-                return;
-            }
-
-            // 初回データ取得
-            await fetchVideoDetails(apiKey, videoId, true);
-            await fetchLiveChatMessages(apiKey, liveChatId, true);
-            scrollToBottom(elements.liveChatDiv); // 自動スクロールを実行
-
-            // ステータスを設定 (取得開始)
-            setStatus(true);
-
-            showNotification("開始しました！");
-
-            // ポーリング開始
-            liveChatPolling = setInterval(async () => {
-                try {
-                    await fetchVideoDetails(apiKey, videoId, false);
-                    await fetchLiveChatMessages(apiKey, liveChatId, false);
-                    scrollToBottom(elements.liveChatDiv); // 自動スクロールを実行
-                } catch (error) {
-                    const reason = error.reason || "unknown";
-                    if (reason === "liveChatEnded" || reason === "invalidVideoId") {
-                        // ライブチャット終了の場合は完全に停止
-                        showNotification("ライブ配信は終了しました", "error");
-                        stopPolling();
-                        setStatus(false); // 停止したことを画面にも残す
-                    } else if (reason === "quotaExceeded") {
-                        // クォータ制限を超えた場合は、一時停止してリトライ
-                        showNotification("クォータ制限を超えました。一時停止し、1分後に再試行します。", "error");
-                        clearInterval(liveChatPolling);
-                        setStatus(false);
-            
-                        setTimeout(() => {
-                            showNotification("クォータ制限からの回復を試みます...");
-                            startPolling(apiKey, videoId);
-                        }, 1 * 60 * 1000); // 1分後にリトライ
-                    } else {
-                        console.error("予期しないエラー:", error);
-                    }
-                }
-            }, LiveChatManager.pollingInterval * 1000);
-
-        } catch (error) {
-            notifyAPIError(error);
-            stopPolling();
-        }
-    }
-
     // APIエラーに関する通知
     function notifyAPIError(error) {
         let reason = error?.reason || "unknown";
@@ -1037,68 +1141,6 @@
 
         // ユーザーへの通知を表示
         showNotification(`${message} (${reason})`, "error");
-    }
-
-    // 自動スクロール
-    function scrollToBottom(element) {
-        if (isAutoScrollEnabled && element) {
-            element.scrollTop = element.scrollHeight;
-        }
-    }    
-
-    // ステータスを設定
-    function setStatus(isRunning) {
-        if (!elements.statusDiv) return;
-
-        elements.statusDiv.classList.add(CLASS_NAMES.status);
-        elements.statusDiv.classList.toggle(CLASS_NAMES.executing, isRunning);
-        elements.statusDiv.classList.toggle(CLASS_NAMES.stopped, !isRunning);
-        elements.statusDiv.textContent = isRunning ? "ライブチャット取得中..." : "停止しました";
-    }
-
-    // ステータスをクリア
-    function clearStatus() {
-        if (!elements.statusDiv) return;
-        elements.statusDiv.classList.remove(CLASS_NAMES.executing, CLASS_NAMES.stopped);
-        elements.statusDiv.textContent = ""; 
-    }
-
-    // 初期化処理を行う
-    function initializePolling() {
-        LiveChatManager.initialize();
-        updateStatsDisplay(true);
-        clearStatus();
-        toggleControls(true);
-    }
-
-    // 停止処理を行う
-    function stopPolling() {
-        clearInterval(liveChatPolling);
-        clearStatus();
-        toggleControls(false);
-        liveChatPolling = null;
-    }
-
-    // ボタンと入力欄の有効/無効を切り替える
-    function toggleControls(isPolling) {
-        elements.startBtn.disabled = isPolling;
-        elements.stopBtn.disabled = !isPolling;
-        toggleInputState(isPolling);
-    }
-
-    // 入力欄を有効化 / 無効化する
-    function toggleInputState(isDisabled) {
-        elements.apiKeyInput.disabled = isDisabled;
-        elements.videoIdInput.disabled = isDisabled;
-        elements.pollingIntervalInput.disabled = isDisabled;
-
-        elements.wordInputs.forEach(input => (input.disabled = isDisabled));
-        elements.weightInputs.forEach(input => (input.disabled = isDisabled));
-
-        elements.likeWeight.disabled = isDisabled;
-        elements.superChatWeight.disabled = isDisabled;
-        elements.superStickerWeight.disabled = isDisabled;
-        elements.memberWeight.disabled = isDisabled;
     }
 
     // 画面設定を保存する
@@ -1190,7 +1232,7 @@
     }
 
     // 開始ボタンクリックイベント
-    function handleStartButtonClick() {
+    async function handleStartButtonClick() {
         if (LiveChatManager.isProcessing) {
             return;
         }
@@ -1204,8 +1246,26 @@
                 return;
             }
 
-            // ポーリングを開始
-            startPolling(apiKey, videoId);
+            // UI からポーリング間隔を取得し、不正値なら修正
+            let pollingInterval = parseInt(elements.pollingIntervalInput.value, 10);
+            if (isNaN(pollingInterval) || pollingInterval <= 0) {
+                pollingInterval = CONFIG.POLLING_INTERVAL_DEFAULT;
+                elements.pollingIntervalInput.value = CONFIG.POLLING_INTERVAL_DEFAULT;
+            }
+
+            // ポーリングオブジェクト
+            pollingManager = new PollingManager(apiKey, videoId, pollingInterval);
+
+            // ライブチャットマネージャーの初期化
+            await LiveChatManager.initialize();
+
+            // 画面表示の初期化
+            updateStatsDisplay(true);
+
+            if (await pollingManager.start())
+            {
+                showNotification("開始しました！！");
+            }
         } catch (error) {
             // 何もしない
         } finally {
@@ -1213,11 +1273,33 @@
         }
     }
 
+    // 一時停止ボタンクリックイベント
+    function handlePauseAndResumeButtonClick() {
+        try {
+            if (!pollingManager) {
+                showNotification("ポーリングが開始されていません。", "error");
+                return;
+            }
+
+            if (pollingManager.isPaused) {
+                pollingManager.resume();
+                showNotification("再開しました！");
+            } else {
+                pollingManager.pause();
+                showNotification("一時停止しました！");
+            }
+        } catch (error) {
+            showNotification("エラーが発生しました。", "error");
+        }
+    }
+
     // 停止ボタンクリックイベント
     function handleStopButtonClick() {
         try {
-            stopPolling();
-            showNotification("停止しました！");
+            if (pollingManager) {
+                pollingManager.stop();
+                showNotification("停止しました！");
+            }
         } catch (error) {
             showNotification("停止処理中にエラーが発生しました。", "error");
         }

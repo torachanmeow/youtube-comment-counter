@@ -98,6 +98,18 @@ h1 {
     cursor: not-allowed;
 }
 
+/* 点滅アニメーション */
+@keyframes blink {
+    0% { background-color: #ff9800; }
+    50% { background-color: #ffb74d; }
+    100% { background-color: #ff9800; }
+}
+
+/* ゆっくり点滅 */
+.btn.active {
+    animation: blink 2s infinite ease-in-out;
+}
+
 /* 設定の表示 */
 .settings-container {
     display: flex;
@@ -435,7 +447,7 @@ details[open] .settings-header {
     opacity: 0;
 }
 
-/* 配信中（緑色） */
+/* 配信中（緑色）*/
 .executing {
     color: #28a745;
     border: 2px solid #28a745;
@@ -444,7 +456,15 @@ details[open] .settings-header {
     animation: slowBlink 2s infinite ease-in-out, glow 2s infinite ease-in-out;
 }
 
-/* 配信終了（赤色） */
+/* 一時停止 (オレンジ色) */
+.pause {
+    color: #ff9800;
+    border: 2px solid #ff9800;
+    border-image: linear-gradient(45deg, #ff9800, #ffc107, #ff9800) 1;
+    opacity: 1;
+}
+
+/* 配信終了（赤色）*/
 .stopped {
     color: #d32f2f;
     border: 2px solid #d32f2f;
