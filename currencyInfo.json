@@ -4,7 +4,7 @@
     "AUD": { "symbol": "A$", "country": "オーストラリア" },
     "BGN": { "symbol": "лв", "country": "ブルガリア" },
     "BRL": { "symbol": "R$", "country": "ブラジル" },
-    "CAD": { "symbol": "C$", "country": "カナダ" },
+    "CAD": { "symbol": "CA$", "country": "カナダ" },
     "CHF": { "symbol": "CHF", "country": "スイス" },
     "CLP": { "symbol": "$", "country": "チリ" },
     "CNY": { "symbol": "¥", "country": "中国" },

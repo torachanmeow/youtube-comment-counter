@@ -337,9 +337,23 @@
     async function fetchExchangeRates() {
         const apiRates = await fetchApiExchangeRates();
         const fileRates = await fetchFileExchangeRates();
-        
+        const currencyInfo = await fetchCurrencyInfo(); 
+
+        // 通貨コード一覧だけ取り出す（= 許可された通貨）
+        const allowedCurrencies = Object.keys(currencyInfo);
+
+        // APIデータをフィルタ
+        const filteredApiRates = apiRates
+            ? Object.fromEntries(Object.entries(apiRates).filter(([code]) => allowedCurrencies.includes(code)))
+            : {};
+
+        // ファイル側も同様にフィルタ（安全のため）
+        const filteredFileRates = Object.fromEntries(
+            Object.entries(fileRates).filter(([code]) => allowedCurrencies.includes(code))
+        );
+
         // API データが有効なら API を優先し、API にない通貨は設定ファイルで補完
-        const exchangeRates = apiRates ? { ...fileRates, ...apiRates } : fileRates;
+        const exchangeRates = { ...filteredFileRates, ...filteredApiRates };
 
         // ローカルストレージへ保存（取得時のタイムスタンプも保存）
         localStorage.setItem('LiveChatExchangeRate', JSON.stringify({
@@ -376,8 +390,10 @@
     // API から為替レートを取得
     async function fetchApiExchangeRates() {
         try {
-            // open-source currency data API (https://frankfurter.dev/)
-            const response = await fetch('https://api.frankfurter.app/latest?base=JPY');
+            // 為替レートデータ取得（無料の ExchangeRate-API を使用）
+            // JPY を基準とした最新の為替レートを取得します。
+            // APIドキュメント: https://www.exchangerate-api.com/docs/free
+            const response = await fetch('https://open.er-api.com/v6/latest/JPY');
             if (!response.ok) return null;
 
             const apiData = await response.json();

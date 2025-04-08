@@ -743,7 +743,7 @@ tbody tr:hover {
     text-align: right;
     width: 100px;
     height: 32px;
-    font-size: 16px;
+    font-size: 14px;
     padding-right: 10px;
     border: 1px solid #ADB5BD;
     border-radius: 4px;
@@ -808,6 +808,19 @@ tbody tr:hover {
 
 .exchangeRates-btn.reset:hover {
     background: #218838;
+}
+
+/* ライセンス表記 */
+.exchangeRates-license-note {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 8px;
+    text-align: left;
+}
+
+.exchangeRates-license-note a {
+    color: #6c757d;
+    text-decoration: underline;
 }
 
 /* フェードインアニメーション */
