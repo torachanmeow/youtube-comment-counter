@@ -72,6 +72,24 @@
         </div>
 
         <details class="settings-container">
+            <summary class="settings-header">カウントルールを設定(開く/閉じる)</summary>
+            <div class="settings-item">
+                <label class="settings-label" for="allowKeywordDuplicates">キーワード重複許可</label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="allowKeywordDuplicates" data-save>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="settings-item">
+                <label class="settings-label" for="keywordDuplicateLimit">キーワード重複上限</label>
+                <input class="settings-value" type="number" id="keywordDuplicateLimit" value="1" min="1" max="999" step="1" data-save>
+            </div>
+            <div class="settings-item">
+                <button id="countRuleResetBtn" class="reset-btn">全て初期値にリセット</button>
+            </div>
+        </details>
+
+        <details class="settings-container">
             <summary class="settings-header">合計のデザインを調整(開く/閉じる)</summary>
             <div class="settings-content">
                 <div class="settings-item">
@@ -112,14 +130,13 @@
             </div>
         </details>
 
-        <div class="settings-half-container">          
+        <div class="settings-container">          
             <div class="settings-item">
                 <label class="settings-label" for="videoId">動画ID</label>
                 <input class="settings-word" type="text" id="videoId" placeholder="動画IDを入力してください" data-save>
             </div>
             <div class="settings-item">
                 <label class="settings-label" for="pollingInterval">ポーリング(秒)</label>
-                <span class="settings-symbol"></span>
                 <input class="settings-value" type="number" id="pollingInterval" value="30" min="1" max="999" step="1" data-save>
             </div>
         </div>

@@ -3,7 +3,7 @@
 
     // URLのパラメータ debug=true デバッグモード
     const urlParams = new URLSearchParams(window.location.search);
-    window.DEBUG = urlParams.get('debug') === 'true' || false;    
+    window.DEBUG = urlParams.get('debug') === 'true' || false;
 
     let isAscending = true;            // 通貨ソート状態 初期値は昇順
     let isAutoScrollEnabled = true;    // 初期値ON
@@ -14,7 +14,8 @@
         MAX_MESSAGE_IDS: 5000,          // 内部ログデータ上限
         USER_HISTORY_LIMIT: 2000,       // ユーザー履歴
         POLLING_TIMEOUT_MS: 10000,      // APIのタイムアウトミリ秒
-        POLLING_INTERVAL_DEFAULT: 30    // ポーリングインターバルの初期値
+        POLLING_INTERVAL_DEFAULT: 30,   // ポーリングインターバルの初期値
+        DEFAULT_DUPLICATE_LIMIT: 1,     // キーワード重複上限のデフォルト値
     };
 
     // 初期値を定義
@@ -23,7 +24,9 @@
         totalPointsTextColor: '#495057',
         totalPointsBgColor: '#F8F9FA',
         totalPointsBgTransparent: false,
-        totalPointsOnly: false,  
+        totalPointsOnly: false,
+        allowKeywordDuplicates: false,
+        keywordDuplicateLimit: CONFIG.DEFAULT_DUPLICATE_LIMIT,
     };
 
     // ステータス定数
@@ -55,7 +58,7 @@
         detailItem: 'detail-item',
         status: 'status',
         executing: 'executing',
-        pause: 'pause',     
+        pause: 'pause',
         stopped: 'stopped',
         show: 'show',
     };
@@ -70,7 +73,7 @@
     // HTML要素
     const elements = {
         startBtn: document.getElementById('startBtn'),
-        pauseBtn: document.getElementById('pauseBtn'),     
+        pauseBtn: document.getElementById('pauseBtn'),
         stopBtn: document.getElementById('stopBtn'),
         apiKeyInput: document.getElementById('apiKey'),
         videoIdInput: document.getElementById('videoId'),
@@ -89,7 +92,7 @@
         openBtn: document.getElementById('openExchangeRateModal'),
         closeBtn: document.getElementById('closeModal'),
         resetExchangeRatesBtn: document.getElementById('resetExchangeRates'),
-        saveExchangeRatesBtn: document.getElementById('saveExchangeRates'),    
+        saveExchangeRatesBtn: document.getElementById('saveExchangeRates'),
         currencySortArrow: document.getElementById("currencySortArrow"),
 
         // 為替レート関連
@@ -107,7 +110,7 @@
         totalPointsResetBtn: document.getElementById('totalPointsResetBtn'),
         totalPointsOnly: document.getElementById('totalPointsOnly'),
         totalPointsContainer: document.querySelector('.totalPoints-container'),
-        totalPointsLabel: document.querySelector('.totalPoints-label'), 
+        totalPointsLabel: document.querySelector('.totalPoints-label'),
         totalPointsDisplay: document.getElementById('totalPointsDisplay'),
 
         // 集計表示関連
@@ -129,6 +132,11 @@
         memberWeight: document.getElementById('memberWeight'),
         likeWeight: document.getElementById('likeWeight'),
 
+        // カウントルール設定
+        allowKeywordDuplicates: document.getElementById('allowKeywordDuplicates'),
+        keywordDuplicateLimit: document.getElementById('keywordDuplicateLimit'),
+        countRuleResetBtn: document.getElementById('countRuleResetBtn'),
+
         // 特定ワード（配列として管理）
         wordInputs: [
             document.getElementById('word1'),
@@ -148,7 +156,7 @@
         currencyInfo: {},    // 通貨情報
         exchangeRates: {},   // 為替レート
         isProcessing: false, // 連打防止用
-        
+
         data: {},           // モニタリングデータ
 
         async initialize() {
@@ -158,12 +166,12 @@
                 messageIds: new Set(),              // 取得済みメッセージID
                 superChatIds: new Set(),            // 取得済みスーパーチャット）
                 superStickerIds: new Set(),         // 取得済みスーパーステッカー）
-                membershipIds: new Set(),           // 取得済みメンバーリスト                    
-                membershipGiftIds: new Set(),       // 取得済みメンバーギフト        
+                membershipIds: new Set(),           // 取得済みメンバーリスト
+                membershipGiftIds: new Set(),       // 取得済みメンバーギフト
                 chatLogs: [],                       // チャットログ
                 videoDetails: {}                    // 動画情報
             };
-            this.userWordHistory = {};  // キーワード投稿履歴 
+            this.userWordHistory = {};  // キーワード投稿履歴
             this.currencyInfo = await fetchCurrencyInfo(); // 通貨情報
             this.exchangeRates = await getValidExchangeRates(); // 為替レート
         }
@@ -195,7 +203,7 @@
                 this.liveChatId = await getLiveChatId(this.apiKey, this.videoId);
                 if (!this.liveChatId) {
                     showNotification("ライブチャットIDが取得できませんでした", "error");
-                    return;
+                    return false;
                 }
 
                 await fetchVideoDetails(this.apiKey, this.videoId, true);
@@ -277,6 +285,7 @@
         loadSettings();
         updateTotalPointsStyle();
         updateExchangeRateDisplay();
+        toggleKeywordDuplicateLimitState();
 
         // イベントリスナー登録
         setupSettingsListeners();
@@ -296,8 +305,11 @@
         elements.totalPointsTextColor.addEventListener("input", updateTotalPointsStyle);
         elements.totalPointsBgColor.addEventListener("input", updateTotalPointsStyle);
         elements.totalPointsBgTransparent.addEventListener("change", updateTotalPointsStyle);
-        elements.totalPointsOnly.addEventListener("change", updateTotalPointsStyle);   
-        elements.autoScrollToggle.addEventListener("change", liveChatAutoScroll); 
+        elements.totalPointsOnly.addEventListener("change", updateTotalPointsStyle);
+        elements.autoScrollToggle.addEventListener("change", liveChatAutoScroll);
+        elements.allowKeywordDuplicates.addEventListener('change', toggleKeywordDuplicateLimitState);
+        elements.countRuleResetBtn.addEventListener('click', resetCountRulesToDefault);
+
 
         // モーダルの外側クリック時
         window.addEventListener("click", closeExchangeRateModalOnOutsideClick);
@@ -386,7 +398,7 @@
         // 1週間以上前、またはデータがない場合は最新のデータを取得
         return await fetchExchangeRates();
     }
-    
+
     // API から為替レートを取得
     async function fetchApiExchangeRates() {
         try {
@@ -493,7 +505,7 @@
         }
 
         // 特定ワードの更新
-        elements.keyWordContainer.innerHTML = ''; 
+        elements.keyWordContainer.innerHTML = '';
 
         for (const [word, count] of Object.entries(stats.keyWord)) {
             const wordItem = document.createElement('div');
@@ -564,7 +576,7 @@
             Math.round(superStickerPoints) +
             Math.round(memberPoints) +
             Math.round(totalWordPoints);
-        
+
         // 各ポイントを整数で表示
         elements.likePoints.textContent = Math.round(likePoints);
         elements.superChatPoints.textContent = Math.round(superChatPoints);
@@ -697,7 +709,7 @@
     async function fetchVideoDetails(apiKey, videoId, isInitialLoad = false) {
         try {
             const videoDetails = await getVideoDetails(apiKey, videoId, isInitialLoad);
-            
+
             if (videoDetails) {
                 if (isInitialLoad) {
                     // 初回ロード時にタイトルやチャンネル名などを更新
@@ -787,7 +799,7 @@
         const messageId = item.id;
         if (!isInitialLoad && LiveChatManager.data.messageIds.has(messageId)) return;
         LiveChatManager.data.messageIds.add(messageId);
-        
+
         // チャットの整理
         const chatData = extractChatData(item);
 
@@ -824,26 +836,49 @@
     // ユーザーの発言履歴を追跡
     function trackUserActivity(authorId) {
         if (!LiveChatManager.userWordHistory[authorId]) {
-            LiveChatManager.userWordHistory[authorId] = { words: new Set(), lastActive: Date.now() };
+            LiveChatManager.userWordHistory[authorId] = { keywordCounts : {}, lastActive: Date.now()};
         }
         LiveChatManager.userWordHistory[authorId].lastActive = Date.now();
     }
 
     // キーワード出現回数をカウント
     function countKeywordOccurrences(authorId, message) {
-        const specialWords = getSpecialWordsWithWeights().map(obj => obj.word);
         if (!message) return;
-        
-        let matchedWords = new Set();
+        const specialWords = getSpecialWordsWithWeights().map(obj => obj.word);
+
+        const duplicateLimit = parseInt(elements.keywordDuplicateLimit.value, 10);
+        // duplicateLimit が NaN や 0 以下の場合のフォールバック（1を最小上限とする）
+        const currentDuplicateLimit = (isNaN(duplicateLimit) || duplicateLimit <= 0) ? CONFIG.DEFAULT_DUPLICATE_LIMIT : duplicateLimit;
+
+        // ユーザー履歴オブジェクトの存在確認と初期化
+        if (!LiveChatManager.userWordHistory[authorId]) {
+            trackUserActivity(authorId);
+        }
+
+        // keywordCounts の存在確認（念のため）
+        if (!LiveChatManager.userWordHistory[authorId].keywordCounts) {
+            LiveChatManager.userWordHistory[authorId].keywordCounts = {};
+        }
+
+        // 最終アクティブ時刻を更新
+        LiveChatManager.userWordHistory[authorId].lastActive = Date.now();
+
+        // メッセージに含まれるワードを抽出
+        const matchedWords = new Set();
         specialWords.forEach((word) => {
             const regex = new RegExp(`(${word})`, 'gi');
             if (message.match(regex)) matchedWords.add(word);
         });
 
         matchedWords.forEach(word => {
-            if (!LiveChatManager.userWordHistory[authorId].words.has(word)) {
+            const currentCount = LiveChatManager.userWordHistory[authorId].keywordCounts[word] || 0;
+
+            // 履歴は常にインクリメントし、実行中の変更に柔軟に対応できるようにしておく
+            LiveChatManager.userWordHistory[authorId].keywordCounts[word] = currentCount + 1;
+
+            // 集計に反映するのは上限まで
+            if (currentCount < currentDuplicateLimit) {
                 LiveChatManager.data.stats.keyWord[word] = (LiveChatManager.data.stats.keyWord[word] || 0) + 1;
-                LiveChatManager.userWordHistory[authorId].words.add(word);
             }
         });
     }
@@ -1064,7 +1099,7 @@
                     node.replaceWith(...tempSpan.childNodes);
                 }
             } else if (node.nodeType === Node.ELEMENT_NODE) {
-                // 子ノードを再帰的に処理
+                // 子ノードを再帰的に処理                
                 Array.from(node.childNodes).forEach(traverseNodes);
             }
         }
@@ -1081,7 +1116,7 @@
             console.warn(`未登録の通貨: ${currency} - 金額: ${amount} を1:1換算`);
             return Math.round(amount); // 1:1換算
         }
-    
+   
         return Math.round(amount / rate + Number.EPSILON);
     }
 
@@ -1340,7 +1375,26 @@
             codeElement.textContent = inputElement.value.toUpperCase();
             updateTotalPointsStyle();
         });
-    }    
+    }
+
+    // キーワード重複上限入力欄の有効/無効を切り替える関数
+    function toggleKeywordDuplicateLimitState() {
+        const allowDuplicates = elements.allowKeywordDuplicates.checked;
+        elements.keywordDuplicateLimit.disabled = !allowDuplicates;
+
+        // OFFにしたときは値を1にリセット
+        if (!allowDuplicates) {
+            elements.keywordDuplicateLimit.value = CONFIG.DEFAULT_DUPLICATE_LIMIT;
+        }
+    }
+
+    // カウントルールを初期値にリセットする関数
+    function resetCountRulesToDefault() {
+        elements.allowKeywordDuplicates.checked = DEFAULT_VALUES.allowKeywordDuplicates;
+        elements.keywordDuplicateLimit.value = DEFAULT_VALUES.keywordDuplicateLimit;
+        toggleKeywordDuplicateLimitState();
+        saveSettings();
+    }
 
     // 合計ポイントのスタイルを更新
     function updateTotalPointsStyle() {
@@ -1537,7 +1591,7 @@
         isAscending = !isAscending;
         renderExchangeRates(isAscending);
     }
-    
+
     // 初期化処理
     document.addEventListener('DOMContentLoaded', initializeApp);
 
