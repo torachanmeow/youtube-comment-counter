@@ -283,9 +283,9 @@
         // データの初期化
         await LiveChatManager.initialize();
         loadSettings();
+        updateCountRule();
         updateTotalPointsStyle();
         updateExchangeRateDisplay();
-        toggleKeywordDuplicateLimitState();
 
         // イベントリスナー登録
         setupSettingsListeners();
@@ -307,9 +307,8 @@
         elements.totalPointsBgTransparent.addEventListener("change", updateTotalPointsStyle);
         elements.totalPointsOnly.addEventListener("change", updateTotalPointsStyle);
         elements.autoScrollToggle.addEventListener("change", liveChatAutoScroll);
-        elements.allowKeywordDuplicates.addEventListener('change', toggleKeywordDuplicateLimitState);
+        elements.allowKeywordDuplicates.addEventListener('change', updateCountRule);
         elements.countRuleResetBtn.addEventListener('click', resetCountRulesToDefault);
-
 
         // モーダルの外側クリック時
         window.addEventListener("click", closeExchangeRateModalOnOutsideClick);
@@ -1377,8 +1376,8 @@
         });
     }
 
-    // キーワード重複上限入力欄の有効/無効を切り替える関数
-    function toggleKeywordDuplicateLimitState() {
+    // カウントルールを更新
+    function updateCountRule() {
         const allowDuplicates = elements.allowKeywordDuplicates.checked;
         elements.keywordDuplicateLimit.disabled = !allowDuplicates;
 
@@ -1388,12 +1387,25 @@
         }
     }
 
-    // カウントルールを初期値にリセットする関数
+    // カウントルールを初期値にリセット
     function resetCountRulesToDefault() {
-        elements.allowKeywordDuplicates.checked = DEFAULT_VALUES.allowKeywordDuplicates;
-        elements.keywordDuplicateLimit.value = DEFAULT_VALUES.keywordDuplicateLimit;
-        toggleKeywordDuplicateLimitState();
+        const targets = [
+            { element: elements.allowKeywordDuplicates, defaultValue: DEFAULT_VALUES.allowKeywordDuplicates },
+            { element: elements.keywordDuplicateLimit,  defaultValue: DEFAULT_VALUES.keywordDuplicateLimit }
+        ];
+
+        targets.forEach(({ element, defaultValue }) => {
+            if (!element) return;
+
+            if (element.type === 'checkbox') {
+                element.checked = defaultValue;
+            } else {
+                element.value = defaultValue;
+            }
+        });
+
         saveSettings();
+        updateCountRule();
     }
 
     // 合計ポイントのスタイルを更新
@@ -1422,26 +1434,28 @@
 
     // 合計ポイントのスタイルを初期値にリセット
     function resetAllTotalPointsToDefault() {
-        // 初期値を設定
-        Object.keys(DEFAULT_VALUES).forEach(key => {
-            const input = elements[key];
-            const defaultValue = DEFAULT_VALUES[key];
+        const targets = [
+            { element: elements.totalPointsFontSize,      defaultValue: DEFAULT_VALUES.totalPointsFontSize },
+            { element: elements.totalPointsTextColor,     defaultValue: DEFAULT_VALUES.totalPointsTextColor },
+            { element: elements.totalPointsBgColor,       defaultValue: DEFAULT_VALUES.totalPointsBgColor },
+            { element: elements.totalPointsBgTransparent, defaultValue: DEFAULT_VALUES.totalPointsBgTransparent },
+            { element: elements.totalPointsOnly,          defaultValue: DEFAULT_VALUES.totalPointsOnly }
+        ];
 
-            if (input) {
-                if (input.type === 'checkbox') {
-                    input.checked = defaultValue;
-                } else {
-                    input.value = defaultValue;
-    
-                    // `input[type="color"]` の UI も更新
-                    if (input.type === "color") {
-                        input.dispatchEvent(new Event("input")); // 変更イベントを手動で発火
-                    }
+        targets.forEach(({ element, defaultValue }) => {
+            if (!element) return;
+
+            if (element.type === 'checkbox') {
+                element.checked = defaultValue;
+            } else {
+                element.value = defaultValue;
+
+                if (element.type === 'color') {
+                    element.dispatchEvent(new Event('input')); // カラーピッカーUI更新
                 }
             }
         });
 
-        // 設定を保存して画面に反映
         saveSettings();
         updateTotalPointsStyle();
     }
