@@ -16,6 +16,8 @@
         POLLING_TIMEOUT_MS: 10000,      // APIのタイムアウトミリ秒
         POLLING_INTERVAL_DEFAULT: 30,   // ポーリングインターバルの初期値
         DEFAULT_DUPLICATE_LIMIT: 1,     // キーワード重複上限のデフォルト値
+        SLOWMODE_TRIGGER_COUNT: 3,      // 何回無反応で低速モードに入るか
+        SLOWMODE_MULTIPLIER: 3          // 低速モード時の倍率
     };
 
     // 初期値を定義
@@ -35,6 +37,7 @@
         STOP: "stop",
         PAUSE: "pause",
         RESUME: "resume",
+        SLOWMODE: "SLOWMODE",
         UNSET: "unset" // 未設定
     };
 
@@ -60,6 +63,7 @@
         executing: 'executing',
         pause: 'pause',
         stopped: 'stopped',
+        slowmode: "slowmode",
         show: 'show',
     };
 
@@ -186,13 +190,19 @@
             this.isPaused = false;
             this.liveChatPolling = null;
             this.liveChatId = null;
+
+            this.basePollingInterval = pollingInterval; // 通常モードでの基準ポーリング間隔
+            this.silentCount = 0;
+            this.lastMessageId = null;
+            this.isSlowMode = false;
         }
 
+        // ポーリング中かどうかを判定
         isPolling() {
             return this.liveChatPolling !== null;
         }
 
-        // 開始
+        // ポーリング開始
         async start() {
             if (this.liveChatPolling !== null) return false;
             this.stop(); // 既存のポーリングを停止
@@ -207,20 +217,14 @@
                 }
 
                 await fetchVideoDetails(this.apiKey, this.videoId, true);
-                await fetchLiveChatMessages(this.apiKey, this.liveChatId, true);
+                const initialLastId = await fetchLiveChatMessages(this.apiKey, this.liveChatId, true);
                 scrollToBottom(elements.liveChatDiv);
+                
+                if (initialLastId) {
+                    this.lastMessageId = initialLastId;
+                }
 
-                this.liveChatPolling = setInterval(async () => {
-                    if (this.isPaused) return;
-                    try {
-                        await fetchVideoDetails(this.apiKey, this.videoId, false);
-                        await fetchLiveChatMessages(this.apiKey, this.liveChatId, false);
-                        scrollToBottom(elements.liveChatDiv);
-                    } catch (error) {
-                        this.handlePollingError(error);
-                    }
-                }, this.pollingInterval * 1000);
-
+                this.schedulePolling();
                 setLiveStatus(LIVE_STATUS.START);
                 return true;
             } catch (error) {
@@ -242,6 +246,15 @@
         resume() {
             if (this.liveChatPolling !== null && this.isPaused) {
                 this.isPaused = false;
+
+                // 再開時は通常モードに戻す
+                if (this.isSlowMode) {
+                    this.pollingInterval = this.basePollingInterval;
+                    this.isSlowMode = false;
+                    clearInterval(this.liveChatPolling);
+                    this.schedulePolling();
+                }
+                
                 setLiveStatus(LIVE_STATUS.RESUME);
             }
         }
@@ -253,7 +266,50 @@
                 this.liveChatPolling = null;
             }
             this.isPaused = false;
+            this.silentCount = 0;
+            this.pollingInterval = this.basePollingInterval;
+            this.isSlowMode = false;
             setLiveStatus(LIVE_STATUS.UNSET);
+        }
+
+        // ポーリングをスケジューリング
+        schedulePolling() {
+            this.liveChatPolling = setInterval(async () => {
+                if (this.isPaused) return;
+                try {
+                    await fetchVideoDetails(this.apiKey, this.videoId, false);
+                    const latestId = await fetchLiveChatMessages(this.apiKey, this.liveChatId, false);
+                    scrollToBottom(elements.liveChatDiv);
+
+                    // 最新チャットが前回と同じ場合はクォーター節約する
+                    if (latestId && latestId !== this.lastMessageId) {
+                        this.silentCount = 0;
+                        this.lastMessageId = latestId;
+
+                        if (this.isSlowMode) {
+                            // 低速モードから通常モード
+                            this.pollingInterval = this.basePollingInterval;
+                            this.isSlowMode = false;
+                            clearInterval(this.liveChatPolling);
+                            this.schedulePolling();
+                        }
+
+                        setLiveStatus(LIVE_STATUS.START);
+                    } else {
+                        this.silentCount++;
+                        if (!this.isSlowMode && this.silentCount >= CONFIG.SLOWMODE_TRIGGER_COUNT) {
+                            // 通常モードから低速モード
+                            this.pollingInterval *= CONFIG.SLOWMODE_MULTIPLIER;
+                            this.isSlowMode = true;
+                            clearInterval(this.liveChatPolling);
+                            this.schedulePolling();
+                            setLiveStatus(LIVE_STATUS.SLOWMODE, { interval: this.pollingInterval });
+                        }
+                    }
+                } catch (error) {
+                    this.handlePollingError(error);
+                }
+            }, this.pollingInterval * 1000);
         }
 
         // ポーリング エラーハンドリング
@@ -432,14 +488,15 @@
     }
 
     // ライブステータスを設定
-    function setLiveStatus(status) {
+    function setLiveStatus(status, option = {}) {
         if (!elements.statusDiv) return;
 
         // すべてのステータスクラスを削除
         elements.statusDiv.classList.remove(
             CLASS_NAMES.executing,
             CLASS_NAMES.stopped,
-            CLASS_NAMES.pause
+            CLASS_NAMES.pause,
+            CLASS_NAMES.slowmode
         );
 
         // 状態に応じたクラスを追加
@@ -456,6 +513,10 @@
             case LIVE_STATUS.STOP:
                 elements.statusDiv.classList.add(CLASS_NAMES.stopped);
                 elements.statusDiv.textContent = "停止しました";
+                break;
+            case LIVE_STATUS.SLOWMODE:
+                elements.statusDiv.classList.add(CLASS_NAMES.slowmode);
+                elements.statusDiv.textContent = `ライブチャット取得中...（低速:${option.interval ?? "??"} 秒間隔）`;
                 break;
             case LIVE_STATUS.UNSET:
                 elements.statusDiv.textContent = "";
@@ -757,6 +818,9 @@
 
             // 表示制限とメモリ管理
             manageChatMemory();
+            
+            // 最新の messageId を返す
+            return messages[messages.length - 1].id;
 
         } catch (error) {
             throw error;

@@ -436,8 +436,8 @@ details[open] .settings-header {
     opacity: 0;
 }
 
-/* 配信中（緑色）*/
-.executing {
+/* 配信中（緑色） or 低速モード */
+.executing, .slowmode {
     color: #28a745;
     border: 2px solid #28a745;
     border-image: linear-gradient(45deg, #28a745, #34d058, #28a745) 1;
