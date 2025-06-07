@@ -183,8 +183,7 @@
 
     // ポーリング制御用クラス
     class PollingManager {
-        constructor(apiKey, videoId, pollingInterval = CONFIG.POLLING_INTERVAL_DEFAULT) {
-            this.apiKey = apiKey;
+        constructor(videoId, pollingInterval = CONFIG.POLLING_INTERVAL_DEFAULT) {
             this.videoId = videoId;
             this.pollingInterval = pollingInterval;
             this.isPaused = false;
@@ -210,14 +209,15 @@
             setLiveStatus(LIVE_STATUS.UNSET);
 
             try {
-                this.liveChatId = await getLiveChatId(this.apiKey, this.videoId);
+                const apiKey = elements.apiKeyInput.value.trim();
+                this.liveChatId = await getLiveChatId(apiKey, this.videoId);
                 if (!this.liveChatId) {
                     showNotification("ライブチャットIDが取得できませんでした", "error");
                     return false;
                 }
 
-                await fetchVideoDetails(this.apiKey, this.videoId, true);
-                const initialLastId = await fetchLiveChatMessages(this.apiKey, this.liveChatId, true);
+                await fetchVideoDetails(apiKey, this.videoId, true);
+                const initialLastId = await fetchLiveChatMessages(apiKey, this.liveChatId, true);
                 scrollToBottom(elements.liveChatDiv);
                 
                 if (initialLastId) {
@@ -276,9 +276,12 @@
         schedulePolling() {
             this.liveChatPolling = setInterval(async () => {
                 if (this.isPaused) return;
+
                 try {
-                    await fetchVideoDetails(this.apiKey, this.videoId, false);
-                    const latestId = await fetchLiveChatMessages(this.apiKey, this.liveChatId, false);
+                    const apiKey = elements.apiKeyInput.value.trim();
+
+                    await fetchVideoDetails(apiKey, this.videoId, false);
+                    const latestId = await fetchLiveChatMessages(apiKey, this.liveChatId, false);
                     scrollToBottom(elements.liveChatDiv);
 
                     // 最新チャットが前回と同じ場合はクォーター節約する
@@ -322,6 +325,9 @@
                 setLiveStatus(LIVE_STATUS.STOP);
             } else if (reason === "quotaExceeded") {
                 showNotification("クォータ制限を超えました。一時停止します。", "error");
+                this.pause();
+            } else if (reason === "badRequest") {
+                showNotification("リクエストに問題がありました。一時停止します。", "error");
                 this.pause();
             } else {
                 console.error("予期しないエラー:", error);
@@ -539,7 +545,6 @@
         elements.pauseBtn.classList.toggle("active", isPaused);
 
         // 入力欄の活性状態変更
-        elements.apiKeyInput.disabled = isDisabled;
         elements.videoIdInput.disabled = isDisabled;
         elements.pollingIntervalInput.disabled = isDisabled;
 
@@ -715,7 +720,7 @@
     // エラーオブジェクトを統一する関数
     function createFetchError(status, errorData, url, defaultReason = "unknown") {
         return {
-            message: `APIエラー: ${errorData.message || "不明なエラー"}`,
+            message: `${errorData.message || "不明なエラー"}`,
             reason: errorData.error?.errors?.[0]?.reason || defaultReason,
             status: status,
             url: url
@@ -1368,7 +1373,7 @@
             }
 
             // ポーリングオブジェクト
-            pollingManager = new PollingManager(apiKey, videoId, pollingInterval);
+            pollingManager = new PollingManager(videoId, pollingInterval);
 
             // ライブチャットマネージャーの初期化
             await LiveChatManager.initialize();
@@ -1422,8 +1427,14 @@
     // APIキーのマスキング切り替えイベント
     function toggleApiKeyVisibility() {
         const apiKeyInput = elements.apiKeyInput;
-        apiKeyInput.type = apiKeyInput.type === "password" ? "text" : "password";
-        elements.toggleApiKeyBtn.textContent = apiKeyInput.type === "password" ? "表示" : "隠す";
+        const isHidden = apiKeyInput.type === "password"; 
+
+        // 表示状態に切り替える
+        apiKeyInput.type = isHidden ? "text" : "password";
+        elements.toggleApiKeyBtn.textContent = isHidden ? "隠す" : "表示";
+
+        // 表示している間だけ編集可、隠したら編集不可
+        apiKeyInput.disabled = !isHidden;
     }
 
     // カラーコードを更新
