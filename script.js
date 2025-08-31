@@ -140,18 +140,11 @@
         allowKeywordDuplicates: document.getElementById('allowKeywordDuplicates'),
         keywordDuplicateLimit: document.getElementById('keywordDuplicateLimit'),
         countRuleResetBtn: document.getElementById('countRuleResetBtn'),
+        keywordResetBtn: document.getElementById('keywordResetBtn'),
 
         // 特定ワード（配列として管理）
-        wordInputs: [
-            document.getElementById('word1'),
-            document.getElementById('word2'),
-            document.getElementById('word3')
-        ],
-        weightInputs: [
-            document.getElementById('weight1'),
-            document.getElementById('weight2'),
-            document.getElementById('weight3')
-        ]
+        wordInputs: Array.from({length: 10}, (_, i) => document.getElementById(`word${i + 1}`)),
+        weightInputs: Array.from({length: 10}, (_, i) => document.getElementById(`weight${i + 1}`))
     };
 
     // ライブチャットマネージャー
@@ -371,6 +364,7 @@
         elements.autoScrollToggle.addEventListener("change", liveChatAutoScroll);
         elements.allowKeywordDuplicates.addEventListener('change', updateCountRule);
         elements.countRuleResetBtn.addEventListener('click', resetCountRulesToDefault);
+        elements.keywordResetBtn.addEventListener('click', resetKeywordsToDefault);
 
         // モーダルの外側クリック時
         window.addEventListener("click", closeExchangeRateModalOnOutsideClick);
@@ -548,6 +542,7 @@
         elements.videoIdInput.disabled = isDisabled;
         elements.pollingIntervalInput.disabled = isDisabled;
 
+        // 実行中は全ての設定項目を無効化（データ整合性保護のため）
         elements.wordInputs.forEach(input => (input.disabled = isDisabled));
         elements.weightInputs.forEach(input => (input.disabled = isDisabled));
 
@@ -555,6 +550,9 @@
         elements.superChatWeight.disabled = isDisabled;
         elements.superStickerWeight.disabled = isDisabled;
         elements.memberWeight.disabled = isDisabled;
+
+        // キーワード関連のリセットボタンのみ無効化
+        elements.keywordResetBtn.disabled = isDisabled;
     }
 
     // 集計結果を更新して表示
@@ -651,6 +649,7 @@
     }
 
     // 特定ワードと重みを ペアで管理 するオブジェクトリスト
+    // 注意: 同じキーワードが複数設定されている場合、より後の設定（大きいindex）が優先される
     function getSpecialWordsWithWeights() {
         return elements.wordInputs
             .map((input, index) => ({
@@ -664,6 +663,7 @@
     // 集計対象の初期化
     function initializeStats() {
         const specialWords = getSpecialWordsWithWeights().map(obj => obj.word);
+        // reduceで同じキーワードがある場合、後から処理されるものが上書きする
         const keyWord = specialWords.reduce((obj, word) => {
             obj[word] = 0;
             return obj;
@@ -680,6 +680,7 @@
     // 係数(重み付け)の初期化
     function initializeWeights() {
         const specialWordsWithWeights = getSpecialWordsWithWeights();
+        // reduceで同じキーワードがある場合、後から処理される重みで上書きされる
         const keyWord = specialWordsWithWeights.reduce((obj, { word, weight }) => {
             obj[word] = weight;
             return obj;
@@ -1481,6 +1482,7 @@
 
         saveSettings();
         updateCountRule();
+        showNotification('カウントルール設定を初期値にリセットしました', 'success');
     }
 
     // 合計ポイントのスタイルを更新
@@ -1533,6 +1535,27 @@
 
         saveSettings();
         updateTotalPointsStyle();
+        showNotification('合計表示のデザインを初期値にリセットしました', 'success');
+    }
+
+    // キーワード設定を初期値にリセット
+    function resetKeywordsToDefault() {
+        // すべてのキーワード入力をクリア
+        elements.wordInputs.forEach(input => {
+            if (input) {
+                input.value = '';
+            }
+        });
+
+        // すべての重み付けを0にリセット
+        elements.weightInputs.forEach(input => {
+            if (input) {
+                input.value = 0;
+            }
+        });
+
+        saveSettings();
+        showNotification('キーワード設定を初期値にリセットしました', 'success');
     }
 
     // ライブチャットコピー ボタンクリックイベント
