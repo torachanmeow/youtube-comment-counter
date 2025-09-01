@@ -933,21 +933,26 @@
         LiveChatManager.userWordHistory[authorId].lastActive = Date.now();
 
         // メッセージに含まれるワードを抽出
-        const matchedWords = new Set();
+        const matchedWords = {};
         specialWords.forEach((word) => {
             const regex = new RegExp(`(${word})`, 'gi');
-            if (message.match(regex)) matchedWords.add(word);
+            const matches = message.match(regex);
+            if (matches) {
+                matchedWords[word] = matches.length;
+            }
         });
 
-        matchedWords.forEach(word => {
+        Object.keys(matchedWords).forEach(word => {
+            const matchCount = matchedWords[word];
             const currentCount = LiveChatManager.userWordHistory[authorId].keywordCounts[word] || 0;
 
-            // 履歴は常にインクリメントし、実行中の変更に柔軟に対応できるようにしておく
-            LiveChatManager.userWordHistory[authorId].keywordCounts[word] = currentCount + 1;
+            // 履歴は実際のマッチ回数分インクリメント
+            LiveChatManager.userWordHistory[authorId].keywordCounts[word] = currentCount + matchCount;
 
-            // 集計に反映するのは上限まで
-            if (currentCount < currentDuplicateLimit) {
-                LiveChatManager.data.stats.keyWord[word] = (LiveChatManager.data.stats.keyWord[word] || 0) + 1;
+            // 集計に反映するのは上限まで（複数マッチ分を考慮）
+            const countToAdd = Math.min(matchCount, Math.max(0, currentDuplicateLimit - currentCount));
+            if (countToAdd > 0) {
+                LiveChatManager.data.stats.keyWord[word] = (LiveChatManager.data.stats.keyWord[word] || 0) + countToAdd;
             }
         });
     }
