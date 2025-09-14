@@ -142,7 +142,7 @@
         countRuleResetBtn: document.getElementById('countRuleResetBtn'),
         keywordResetBtn: document.getElementById('keywordResetBtn'),
 
-        // 特定ワード（配列として管理）
+        // 個別キーワード（配列として管理）
         wordInputs: Array.from({length: 10}, (_, i) => document.getElementById(`word${i + 1}`)),
         weightInputs: Array.from({length: 10}, (_, i) => document.getElementById(`weight${i + 1}`))
     };
@@ -560,15 +560,15 @@
         const stats = LiveChatManager.data.stats;
 
         if (isInitialLoad) {
-            elements.videoDetailsDiv.innerHTML = '';
+            elements.videoDetailsDiv.textContent = '';
             elements.liveChatDiv.textContent = '';
             elements.lastFetchTimeDiv.textContent = '00:00:00';
         } else {
             elements.lastFetchTimeDiv.textContent = new Date().toLocaleTimeString();
         }
 
-        // 特定ワードの更新
-        elements.keyWordContainer.innerHTML = '';
+        // 個別キーワードの更新
+        elements.keyWordContainer.textContent = '';
 
         for (const [word, count] of Object.entries(stats.keyWord)) {
             const wordItem = document.createElement('div');
@@ -606,9 +606,9 @@
         const superStickerPoints = stats.superStickers * weights.superStickers;
         const memberPoints = stats.members * weights.members;
 
-        // 特定ワードのポイントを計算
+        // 個別キーワードのポイントを計算
         const wordPointsContainer = elements.wordPointsContainer;
-        wordPointsContainer.innerHTML = '';
+        wordPointsContainer.textContent = '';
         let totalWordPoints = 0;
 
         for (const [word, count] of Object.entries(stats.keyWord)) {
@@ -648,7 +648,7 @@
         elements.totalPointsDisplay.textContent = totalPoints;
     }
 
-    // 特定ワードと重みを ペアで管理 するオブジェクトリスト
+    // 個別キーワードと重みを ペアで管理 するオブジェクトリスト
     // 注意: 同じキーワードが複数設定されている場合、より後の設定（大きいindex）が優先される
     function getSpecialWordsWithWeights() {
         return elements.wordInputs
@@ -841,19 +841,28 @@
         // タイトル
         const titleElement = document.createElement('div');
         titleElement.className = CLASS_NAMES.detailItem;
-        titleElement.innerHTML = `<strong>タイトル:</strong> ${details.title}`;
+        const titleStrong = document.createElement('strong');
+        titleStrong.textContent = 'タイトル:';
+        titleElement.appendChild(titleStrong);
+        titleElement.appendChild(document.createTextNode(' ' + details.title));
         videoDetailsContainer.appendChild(titleElement);
 
         // チャンネル名
         const channelElement = document.createElement('div');
         channelElement.className = CLASS_NAMES.detailItem;
-        channelElement.innerHTML = `<strong>チャンネル:</strong> ${details.channelTitle}`;
+        const channelStrong = document.createElement('strong');
+        channelStrong.textContent = 'チャンネル:';
+        channelElement.appendChild(channelStrong);
+        channelElement.appendChild(document.createTextNode(' ' + details.channelTitle));
         videoDetailsContainer.appendChild(channelElement);
 
         // 公開日時
         const publishedAtElement = document.createElement('div');
         publishedAtElement.className = CLASS_NAMES.detailItem;
-        publishedAtElement.innerHTML = `<strong>公開日:</strong> ${new Date(details.publishedAt).toLocaleString()}`;
+        const publishedStrong = document.createElement('strong');
+        publishedStrong.textContent = '公開日:';
+        publishedAtElement.appendChild(publishedStrong);
+        publishedAtElement.appendChild(document.createTextNode(' ' + new Date(details.publishedAt).toLocaleString()));
         videoDetailsContainer.appendChild(publishedAtElement);
 
         // 表示エリアに追加
@@ -895,11 +904,11 @@
         };
     }
 
-    // HTMLをサニタイズ
+    // HTMLをエスケープ
     function sanitizeHTML(str) {
         const tempDiv = document.createElement("div");
         tempDiv.textContent = str;
-        return tempDiv.innerHTML;
+        return tempDiv.textContent;
     }
 
     // ユーザーの発言履歴を追跡
@@ -1053,7 +1062,7 @@
 
         // メッセージ本文（キーワードのハイライト適用）
         const messageSpan = createChatElement("span", CLASS_NAMES.chatText);
-        messageSpan.innerHTML = highlightSpecialWords(message);
+        insertHighlightedText(messageSpan, message);
 
         // スーパーチャットの処理
         if (item.snippet.superChatDetails) {
@@ -1137,50 +1146,72 @@
         }
     }
 
-    // 特定ワードをハイライトする
-    function highlightSpecialWords(message) {
-        if (!message) return message;
+    // 個別キーワードをハイライトして挿入
+    function insertHighlightedText(container, message) {
+        if (!message) {
+            container.textContent = message;
+            return;
+        }
+
         const specialWordsWithWeights = getSpecialWordsWithWeights();
         const highlightClass = CLASS_NAMES.chatSpecialWord;
 
-        // 特定ワードを長さの降順でソート（長いワードが優先される）
+        // 個別キーワードを長さの降順でソート
         specialWordsWithWeights.sort((a, b) => b.word.length - a.word.length);
 
-        // HTML解析用のDOMParser
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(`<div>${message}</div>`, 'text/html');
-        const root = doc.body.firstChild;
-
-        function traverseNodes(node) {
-            if (node.nodeType === Node.TEXT_NODE) {
-                let updatedText = node.nodeValue;
-
-                // 長いワードから順番に置き換えを実行
-                specialWordsWithWeights.forEach(({ word }) => {
-                    const regex = new RegExp(`(${word})`, 'gi');
-                    updatedText = updatedText.replace(
-                        regex,
-                        `<span class="${highlightClass}">$1</span>`
-                    );
+        // マッチ情報を収集
+        const matches = [];
+        specialWordsWithWeights.forEach(({ word }) => {
+            const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            let match;
+            while ((match = regex.exec(message)) !== null) {
+                matches.push({
+                    start: match.index,
+                    end: match.index + match[0].length,
+                    text: match[0]
                 });
-
-                // 変更があった場合にのみノードを置き換える
-                if (updatedText !== node.nodeValue) {
-                    const tempSpan = document.createElement('span');
-                    tempSpan.innerHTML = updatedText;
-
-                    // 元のテキストノードを置き換え
-                    node.replaceWith(...tempSpan.childNodes);
-                }
-            } else if (node.nodeType === Node.ELEMENT_NODE) {
-                // 子ノードを再帰的に処理                
-                Array.from(node.childNodes).forEach(traverseNodes);
             }
+        });
+
+        // マッチを位置順にソート
+        matches.sort((a, b) => a.start - b.start);
+
+        // 重複を除去
+        const filteredMatches = [];
+        let lastEnd = 0;
+        matches.forEach(match => {
+            if (match.start >= lastEnd) {
+                filteredMatches.push(match);
+                lastEnd = match.end;
+            }
+        });
+
+        // DOM要素を生成
+        let lastIndex = 0;
+        filteredMatches.forEach(match => {
+            // マッチ前のテキスト
+            if (match.start > lastIndex) {
+                container.appendChild(document.createTextNode(message.substring(lastIndex, match.start)));
+            }
+
+            // ハイライトされたテキスト
+            const highlightSpan = document.createElement('span');
+            highlightSpan.className = highlightClass;
+            highlightSpan.textContent = match.text;
+            container.appendChild(highlightSpan);
+
+            lastIndex = match.end;
+        });
+
+        // 最後の残りテキスト
+        if (lastIndex < message.length) {
+            container.appendChild(document.createTextNode(message.substring(lastIndex)));
         }
 
-        traverseNodes(root);
-
-        return root.innerHTML;
+        // マッチがない場合
+        if (filteredMatches.length === 0) {
+            container.textContent = message;
+        }
     }
 
     // 金額は円換算で算出する
@@ -1651,7 +1682,7 @@
     function renderExchangeRates(ascending = true) {
         const table = elements.exchangeRateTable;
         const tableBody = table.querySelector("tbody");
-        tableBody.innerHTML = ''; // テーブルの内容をクリア
+        tableBody.textContent = ''; // テーブルの内容をクリア
 
         // 通貨コード順にソート
         const sortedRates = Object.entries(LiveChatManager.exchangeRates).sort((a, b) =>
