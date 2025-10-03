@@ -27,6 +27,7 @@
         totalPointsBgColor: '#F8F9FA',
         totalPointsBgTransparent: false,
         totalPointsOnly: false,
+        totalPointsAnimation: 'none',
         allowKeywordDuplicates: false,
         keywordDuplicateLimit: CONFIG.DEFAULT_DUPLICATE_LIMIT,
     };
@@ -113,6 +114,7 @@
         totalPointsBgTransparent: document.getElementById('totalPointsBgTransparent'),
         totalPointsResetBtn: document.getElementById('totalPointsResetBtn'),
         totalPointsOnly: document.getElementById('totalPointsOnly'),
+        totalPointsAnimation: document.getElementById('totalPointsAnimation'),
         totalPointsContainer: document.querySelector('.totalPoints-container'),
         totalPointsLabel: document.querySelector('.totalPoints-label'),
         totalPointsDisplay: document.getElementById('totalPointsDisplay'),
@@ -645,7 +647,47 @@
         elements.superChatPoints.textContent = Math.round(superChatPoints);
         elements.superStickerPoints.textContent = Math.round(superStickerPoints);
         elements.memberPoints.textContent = Math.round(memberPoints);
-        elements.totalPointsDisplay.textContent = totalPoints;
+
+        // 合計ポイント更新（アニメーション設定に応じて適用）
+        const previousTotal = parseInt(elements.totalPointsDisplay.textContent) || 0;
+        const animationType = elements.totalPointsAnimation?.value || 'none';
+
+        if (totalPoints !== previousTotal) {
+            switch (animationType) {
+                case 'countup':
+                    animateNumber(elements.totalPointsDisplay, previousTotal, totalPoints, 1000);
+                    break;
+                default:
+                    elements.totalPointsDisplay.textContent = totalPoints;
+            }
+        } else {
+            elements.totalPointsDisplay.textContent = totalPoints;
+        }
+    }
+
+    // 数字をアニメーションさせる関数
+    function animateNumber(element, start, end, duration) {
+        const startTime = performance.now();
+        const difference = end - start;
+
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // easeOutQuad イージング
+            const easeProgress = 1 - (1 - progress) * (1 - progress);
+            const current = Math.round(start + difference * easeProgress);
+
+            element.textContent = current;
+
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            } else {
+                element.textContent = end;
+            }
+        }
+
+        requestAnimationFrame(update);
     }
 
     // 個別キーワードと重みを ペアで管理 するオブジェクトリスト
@@ -1552,7 +1594,8 @@
             { element: elements.totalPointsTextColor,     defaultValue: DEFAULT_VALUES.totalPointsTextColor },
             { element: elements.totalPointsBgColor,       defaultValue: DEFAULT_VALUES.totalPointsBgColor },
             { element: elements.totalPointsBgTransparent, defaultValue: DEFAULT_VALUES.totalPointsBgTransparent },
-            { element: elements.totalPointsOnly,          defaultValue: DEFAULT_VALUES.totalPointsOnly }
+            { element: elements.totalPointsOnly,          defaultValue: DEFAULT_VALUES.totalPointsOnly },
+            { element: elements.totalPointsAnimation,     defaultValue: DEFAULT_VALUES.totalPointsAnimation }
         ];
 
         targets.forEach(({ element, defaultValue }) => {
